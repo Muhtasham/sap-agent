@@ -3,7 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  setupFiles: ['<rootDir>/jest.setup.js'],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
@@ -29,5 +29,9 @@ module.exports = {
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@anthropic-ai|@modelcontextprotocol)/)',
+  ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/node_modules/swagger-ui-express',
+    '<rootDir>/node_modules/swagger-jsdoc',
   ],
 };
