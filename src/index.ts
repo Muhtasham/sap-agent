@@ -4,8 +4,7 @@
  */
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { GenerateEndpointRequest, CodeGenerationResult } from './types';
-import { quoteEndpointAgent } from './agents/orchestrator';
+import { GenerateEndpointRequest } from './types';
 import { sapContextAgent } from './agents/context-analyzer';
 import { abapCodeGenerator } from './agents/code-generator';
 import { testGenerator } from './agents/test-generator';
@@ -131,12 +130,10 @@ All code must be production-ready and follow SAP best practices.
       console.log('\n' + '='.repeat(70));
       console.log('GENERATION COMPLETE');
       console.log('='.repeat(70));
-      console.log(`Status: ${message.result}`);
+      console.log(`Status: ${message.subtype || 'completed'}`);
       console.log(`Cost: $${message.total_cost_usd.toFixed(4)}`);
       console.log(`Duration: ${(message.duration_ms / 1000).toFixed(2)}s`);
       console.log('='.repeat(70));
-    } else if (message.type === 'error') {
-      console.error('\n[ERROR]:', message.error);
     }
   }
 

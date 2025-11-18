@@ -2,18 +2,27 @@
  * MCP Tool: Parse SAP table structure
  */
 
-import { tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { DDICParser } from '../../parsers/ddic-parser';
 
-export const parseSapTableTool = tool(
-  'parse_sap_table',
-  'Parse SAP table structure from DDIC export or SE11 documentation',
-  {
-    table_name: z.string().describe('SAP table name (e.g., VBAK, VBAP)'),
-    ddic_export: z.string().describe('DDIC export text or SE11 structure output'),
+export const parseSapTableTool = {
+  name: 'parse_sap_table',
+  description: 'Parse SAP table structure from DDIC export or SE11 documentation',
+  parameters: {
+    type: 'object' as const,
+    properties: {
+      table_name: {
+        type: 'string',
+        description: 'SAP table name (e.g., VBAK, VBAP)',
+      },
+      ddic_export: {
+        type: 'string',
+        description: 'DDIC export text or SE11 structure output',
+      },
+    },
+    required: ['table_name', 'ddic_export'],
   },
-  async (args) => {
+  async handler(args: z.infer<typeof argsSchema>) {
     try {
       const tableStructure = DDICParser.parseTableStructure(
         args.table_name,
@@ -54,5 +63,10 @@ export const parseSapTableTool = tool(
         isError: true,
       };
     }
-  }
-);
+  },
+};
+
+const argsSchema = z.object({
+  table_name: z.string(),
+  ddic_export: z.string(),
+});

@@ -60,7 +60,8 @@ export async function createSapMcpServer() {
     }
 
     try {
-      const result = await tool.handler(request.params.arguments || {}, {});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await tool.handler(request.params.arguments || {} as any);
       return result;
     } catch (error) {
       return {

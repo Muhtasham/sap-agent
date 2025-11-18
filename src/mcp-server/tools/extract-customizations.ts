@@ -2,23 +2,29 @@
  * MCP Tool: Extract SAP customizations
  */
 
-import { tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { CustomizationParser } from '../../parsers/customization-parser';
 
-export const extractCustomizations = tool(
-  'extract_sap_customizations',
-  'Analyze provided SAP configuration files to find customizations',
-  {
-    config_files: z
-      .array(z.string())
-      .describe('Paths to SAP config/export files'),
-    focus_area: z
-      .enum(['tables', 'fields', 'bapis', 'exits'])
-      .optional()
-      .describe('What to extract'),
+export const extractCustomizations = {
+  name: 'extract_sap_customizations',
+  description: 'Analyze provided SAP configuration files to find customizations',
+  parameters: {
+    type: 'object' as const,
+    properties: {
+      config_files: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Paths to SAP config/export files',
+      },
+      focus_area: {
+        type: 'string',
+        enum: ['tables', 'fields', 'bapis', 'exits'],
+        description: 'What to extract',
+      },
+    },
+    required: ['config_files'],
   },
-  async (args) => {
+  async handler(args: z.infer<typeof argsSchema>) {
     try {
       const customizations = await CustomizationParser.analyzeConfigs(
         args.config_files,
@@ -59,5 +65,10 @@ export const extractCustomizations = tool(
         isError: true,
       };
     }
-  }
-);
+  },
+};
+
+const argsSchema = z.object({
+  config_files: z.array(z.string()),
+  focus_area: z.enum(['tables', 'fields', 'bapis', 'exits']).optional(),
+});

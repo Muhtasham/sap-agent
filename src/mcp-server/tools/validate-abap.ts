@@ -2,21 +2,29 @@
  * MCP Tool: Validate ABAP syntax
  */
 
-import { tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { ABAPSyntaxValidator } from '../../validators/abap-syntax';
 import { SAPVersion } from '../../types';
 
-export const validateAbapSyntax = tool(
-  'validate_abap_syntax',
-  'Perform basic ABAP syntax validation',
-  {
-    code: z.string().describe('ABAP code to validate'),
-    sap_version: z
-      .enum(['R3', 'ECC6', 'S4HANA'])
-      .describe('Target SAP version'),
+export const validateAbapSyntax = {
+  name: 'validate_abap_syntax',
+  description: 'Perform basic ABAP syntax validation',
+  parameters: {
+    type: 'object' as const,
+    properties: {
+      code: {
+        type: 'string',
+        description: 'ABAP code to validate',
+      },
+      sap_version: {
+        type: 'string',
+        enum: ['R3', 'ECC6', 'S4HANA'],
+        description: 'Target SAP version',
+      },
+    },
+    required: ['code', 'sap_version'],
   },
-  async (args) => {
+  async handler(args: z.infer<typeof argsSchema>) {
     try {
       const validation = ABAPSyntaxValidator.validate(
         args.code,
@@ -58,5 +66,10 @@ export const validateAbapSyntax = tool(
         isError: true,
       };
     }
-  }
-);
+  },
+};
+
+const argsSchema = z.object({
+  code: z.string(),
+  sap_version: z.enum(['R3', 'ECC6', 'S4HANA']),
+});

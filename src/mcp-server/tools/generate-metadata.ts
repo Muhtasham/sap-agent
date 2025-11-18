@@ -2,28 +2,42 @@
  * MCP Tool: Generate OData metadata XML
  */
 
-import { tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { ODataValidator } from '../../validators/odata-validator';
 
-export const generateODataMetadata = tool(
-  'generate_odata_metadata',
-  'Generate OData service metadata XML from entity definitions',
-  {
-    entity_name: z.string().describe('Name of the OData entity'),
-    properties: z
-      .array(
-        z.object({
-          name: z.string(),
-          type: z.string(),
-          nullable: z.boolean().optional(),
-          maxLength: z.number().optional(),
-        })
-      )
-      .describe('Entity properties'),
-    keys: z.array(z.string()).describe('Key property names'),
+export const generateODataMetadata = {
+  name: 'generate_odata_metadata',
+  description: 'Generate OData service metadata XML from entity definitions',
+  parameters: {
+    type: 'object' as const,
+    properties: {
+      entity_name: {
+        type: 'string',
+        description: 'Name of the OData entity',
+      },
+      properties: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            type: { type: 'string' },
+            nullable: { type: 'boolean' },
+            maxLength: { type: 'number' },
+          },
+          required: ['name', 'type'],
+        },
+        description: 'Entity properties',
+      },
+      keys: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Key property names',
+      },
+    },
+    required: ['entity_name', 'properties', 'keys'],
   },
-  async (args) => {
+  async handler(args: z.infer<typeof argsSchema>) {
     try {
       const metadata = generateMetadataXML(
         args.entity_name,
@@ -60,8 +74,21 @@ export const generateODataMetadata = tool(
         isError: true,
       };
     }
-  }
-);
+  },
+};
+
+const argsSchema = z.object({
+  entity_name: z.string(),
+  properties: z.array(
+    z.object({
+      name: z.string(),
+      type: z.string(),
+      nullable: z.boolean().optional(),
+      maxLength: z.number().optional(),
+    })
+  ),
+  keys: z.array(z.string()),
+});
 
 /**
  * Generate OData metadata XML
