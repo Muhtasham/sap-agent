@@ -313,13 +313,15 @@ modal setup
 # Add your Anthropic API key
 modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-...
 
-# Start the API server (uses Modal sandboxes internally)
-npm run build
-node dist/modal-deployment.js serve 3000
+# Start the API server
+npm run serve
 ```
 
-This creates an HTTP API that spawns Modal sandboxes on-demand:
+This creates an HTTP API with interactive Swagger documentation:
 
+**Interactive API Docs:** http://localhost:3000/api-docs
+
+**Example API Call:**
 ```bash
 curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
@@ -332,6 +334,12 @@ curl -X POST http://localhost:3000/api/generate \
     "quote_fields": ["customer_id", "quote_date"]
   }'
 ```
+
+**API Endpoints:**
+- `GET /api-docs` - Interactive Swagger UI
+- `POST /api/generate` - Generate SAP code
+- `GET /api/download/:customer` - Download code as tar.gz
+- `GET /api/customers` - List all customers
 
 ### Cost Estimation
 

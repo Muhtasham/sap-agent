@@ -32,6 +32,7 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
@@ -42,6 +43,24 @@
         .header p {
             opacity: 0.9;
             font-size: 14px;
+        }
+
+        .api-docs-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .api-docs-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
         }
 
         .content {
@@ -228,6 +247,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <a href="/api-docs" target="_blank" class="api-docs-link">📚 API Docs</a>
             <h1>🚀 SAP Endpoint Generator</h1>
             <p>AI-Powered ABAP Code Generation for OData Services</p>
         </div>
