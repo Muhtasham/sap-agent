@@ -87,6 +87,8 @@ Options:
   --fields <fields...>           Required quote fields
   --custom-fields <json>         Custom fields as JSON
   --special-logic <text>         Special business logic description
+  --resume <session-id>          Resume from a previous session ID
+  --fork                         Fork the resumed session (creates new branch)
 ```
 
 ### Initialize Project
@@ -258,6 +260,8 @@ Custom Model Context Protocol (MCP) tools provide SAP-specific capabilities:
 
 The generator captures session IDs for resumption and forking:
 
+#### Programmatic API
+
 ```typescript
 const { sessionId } = await generateQuoteEndpoint(request);
 
@@ -274,6 +278,20 @@ const forked = await generateQuoteEndpoint({
   resume: sessionId,
   forkSession: true  // Create new branch
 });
+```
+
+#### CLI Usage
+
+```bash
+# Initial generation - save the session ID from output
+sap-generate quote --customer acme --sap-version ECC6 --config-files config/*.txt
+# Output: ✅ Session ID: abc-123-xyz
+
+# Resume the session to continue where you left off
+sap-generate quote --resume abc-123-xyz --customer acme --sap-version ECC6 --config-files config/*.txt
+
+# Fork the session to try a different approach
+sap-generate quote --resume abc-123-xyz --fork --customer acme --sap-version ECC6 --config-files config/*.txt
 ```
 
 **Benefits:**

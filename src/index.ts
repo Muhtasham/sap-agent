@@ -17,7 +17,7 @@ import * as fs from 'fs';
  */
 export async function generateQuoteEndpoint(
   request: GenerateEndpointRequest
-): Promise<{ messages: any[]; result: any }> {
+): Promise<{ messages: any[]; result: any; sessionId?: string }> {
   const outputDir = request.outputDir || './output';
   const customerDir = path.join(outputDir, request.customerName);
 
@@ -107,6 +107,12 @@ All code must be production-ready and follow SAP best practices.
 
       // Enable thinking for better code generation
       maxThinkingTokens: 10000,
+
+      // Session management
+      ...(request.resume && {
+        resume: request.resume,
+        forkSession: request.forkSession ?? false,
+      }),
     },
   });
 

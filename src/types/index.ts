@@ -56,6 +56,9 @@ export interface GenerateEndpointRequest {
     specialLogic?: string;
   };
   outputDir?: string;
+  // Session management
+  resume?: string;        // Session ID to resume from
+  forkSession?: boolean;  // Whether to fork (true) or continue (false) the session
 }
 
 export interface ValidationResult {

@@ -116,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed message type handling in query result processing
   - Removed unused imports (CodeGenerationResult, quoteEndpointAgent)
   - Added proper type assertions and eslint-disable comments
+  - Fixed return type of generateQuoteEndpoint to include sessionId
 - **ESLint Compliance**: Achieved 0 errors, 0 warnings
   - Prefixed all unused parameters with underscore
   - Added ESLINT_USE_FLAT_CONFIG=false for ESLint v9 compatibility
@@ -128,6 +129,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - tests/ddic-parser.test.ts - Additional DDIC parser edge cases
   - tests/customization-parser.test.ts - Comprehensive customization parser coverage
   - tests/parsers.test.ts - Enhanced with analyzeConfigs and extractCustomObjects tests
+- **Complete Session Management**: Full support for session resumption and forking
+  - Added `resume` and `forkSession` parameters to GenerateEndpointRequest interface
+  - Session ID capture from init message in generateQuoteEndpoint
+  - CLI support: `--resume <session-id>` and `--fork` options
+  - Documentation with both programmatic and CLI examples
+  - Enables continuing interrupted generation and exploring alternative approaches
+- **Architecture Visualization**: Added Mermaid diagrams to README
+  - Multi-Agent Workflow diagram showing delegation patterns
+  - MCP Tools Integration diagram
+  - Generation Flow sequence diagram
 
 ### Improved
 - **Test Coverage**: Achieved exceptional coverage (all above 70% threshold)
@@ -143,11 +154,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed extractCustomObjects to find all Z/Y matches per line using matchAll
   - Enhanced parseFieldLine to handle decimals in both formats
   - Improved checkTransactionSafety to filter comments before validation
+- **Documentation**: Enhanced README with comprehensive session management examples
+  - CLI usage examples for resuming and forking sessions
+  - Updated command reference with new options
+  - Clear explanation of benefits and use cases
 
 ### Changed
 - Updated test runners to use proper typing and avoid false positives
 - Improved error handling in MCP server tool execution
 - Enhanced validation in parser tests for more robust assertions
+- Return type of generateQuoteEndpoint now includes optional sessionId field
 
 ---
 

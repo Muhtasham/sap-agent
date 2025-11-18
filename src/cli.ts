@@ -36,6 +36,8 @@ program
   )
   .option('--custom-fields <json>', 'Custom fields as JSON string')
   .option('--special-logic <text>', 'Special business logic description')
+  .option('--resume <session-id>', 'Resume from a previous session ID')
+  .option('--fork', 'Fork the resumed session (creates a new branch)')
   .action(async (options) => {
     try {
       // Validate customer name
@@ -85,11 +87,29 @@ program
           customFields,
           specialLogic: options.specialLogic,
         },
+        // Session management
+        ...(options.resume && {
+          resume: options.resume,
+          forkSession: options.fork ?? false,
+        }),
       };
 
       // Generate endpoint
+      if (options.resume) {
+        console.log(`Resuming session: ${options.resume}`);
+        if (options.fork) {
+          console.log('(Forking into a new session branch)\n');
+        } else {
+          console.log('(Continuing original session)\n');
+        }
+      }
       console.log('Starting SAP endpoint generation...\n');
-      await generateQuoteEndpoint(request);
+      const { sessionId } = await generateQuoteEndpoint(request);
+
+      if (sessionId) {
+        console.log(`\n✅ Session ID: ${sessionId}`);
+        console.log('   Save this ID to resume this session later.\n');
+      }
 
       process.exit(0);
     } catch (error) {
