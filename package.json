@@ -11,8 +11,14 @@
     "generate": "node dist/cli.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
-    "clean": "rm -rf dist"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "clean": "rm -rf dist",
+    "example:basic": "ts-node examples/basic-usage.ts",
+    "example:advanced": "ts-node examples/advanced-usage.ts",
+    "example:programmatic": "ts-node examples/programmatic-usage.ts",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "bin": {
     "sap-generate": "./dist/cli.js"
