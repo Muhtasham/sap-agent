@@ -299,6 +299,70 @@ sap-generate quote --resume abc-123-xyz --fork --customer acme --sap-version ECC
 - **Fork workflows** - Explore different approaches without losing original
 - **Session history** - Full conversation context preserved
 
+## Production Deployment
+
+### Deploy to Modal
+
+For pilot customers and production use, deploy to Modal for serverless, on-demand code generation:
+
+```bash
+# Install Modal
+pip install modal
+
+# Set up Modal account
+modal setup
+
+# Add your Anthropic API key
+modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-...
+
+# Deploy
+modal deploy src/modal-deployment.py
+```
+
+This creates an HTTP endpoint you can integrate with your web app:
+
+```bash
+curl -X POST https://your-org--sap-endpoint-generator-api-generate.modal.run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_name": "acme",
+    "sap_version": "ECC6",
+    "config_files": {...},
+    "quote_fields": ["customer_id", "quote_date"]
+  }'
+```
+
+### Cost Estimation
+
+**For 10 generations/day:**
+- Infrastructure (Modal): **~$2.40/month**
+- AI API (Anthropic): **~$600/month**
+- Storage: **<$0.01/month**
+
+**Total: ~$600/month** (dominated by API costs)
+
+### Web Interface
+
+A ready-to-use web interface is provided in `examples/web-client.html`:
+
+```bash
+# Update the endpoint URL in the file
+sed -i 's/YOUR_MODAL_ENDPOINT_URL_HERE/https:\/\/your-endpoint.modal.run/' examples/web-client.html
+
+# Serve it
+python -m http.server 8000
+# Open http://localhost:8000/examples/web-client.html
+```
+
+### Documentation
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment guide including:
+- Security considerations
+- Monitoring and observability
+- Integration examples (React, FastAPI)
+- Session management in production
+- Pilot customer checklist
+
 ## Development
 
 ### Project Structure
