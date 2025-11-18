@@ -100,7 +100,7 @@ All code must be production-ready and follow SAP best practices.
       permissionMode: 'acceptEdits',
 
       // Use the best model
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
 
       // Allow enough turns for complex generation
       maxTurns: 50,

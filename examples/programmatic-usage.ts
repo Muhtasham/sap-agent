@@ -107,7 +107,7 @@ Save all files to the output directory.
         ],
 
         // Configuration
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         maxTurns: 30,
         maxThinkingTokens: 10000,
 
