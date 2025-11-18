@@ -113,9 +113,17 @@ All code must be production-ready and follow SAP best practices.
   // Stream results and collect messages
   const messages: any[] = [];
   let finalResult: any = null;
+  let sessionId: string | undefined;
 
   for await (const message of result) {
     messages.push(message);
+
+    // Capture session ID from init message
+    if (message.type === 'system' && message.subtype === 'init') {
+      sessionId = message.session_id;
+      console.log(`\n📋 Session ID: ${sessionId}`);
+      console.log('   (Save this ID to resume the session later)\n');
+    }
 
     if (message.type === 'assistant') {
       // Log assistant messages
@@ -133,6 +141,9 @@ All code must be production-ready and follow SAP best practices.
       console.log(`Status: ${message.subtype || 'completed'}`);
       console.log(`Cost: $${message.total_cost_usd.toFixed(4)}`);
       console.log(`Duration: ${(message.duration_ms / 1000).toFixed(2)}s`);
+      if (sessionId) {
+        console.log(`Session ID: ${sessionId}`);
+      }
       console.log('='.repeat(70));
     }
   }
@@ -151,7 +162,7 @@ Next steps:
 For support or issues, please contact the development team.
 `);
 
-  return { messages, result: finalResult };
+  return { messages, result: finalResult, sessionId };
 }
 
 /**

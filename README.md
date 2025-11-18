@@ -151,13 +151,99 @@ ZZWARRANTY     NUMC  2       Warranty Period (Months)
 
 ### Agent-Based Generation
 
-The SAP Endpoint Generator uses a multi-agent architecture:
+The SAP Endpoint Generator uses a multi-agent architecture powered by Claude Agent SDK with specialized subagents:
 
-1. **Orchestrator Agent**: Coordinates the overall workflow
-2. **Context Analyzer**: Analyzes SAP configuration and extracts customizations
-3. **Code Generator**: Generates ABAP code from templates
-4. **Test Generator**: Creates comprehensive test suites
-5. **Deployment Guide Generator**: Writes step-by-step deployment documentation
+1. **Orchestrator Agent** (`quoteEndpointAgent`): Coordinates the overall workflow
+2. **Context Analyzer** (`sapContextAgent`): Analyzes SAP configuration and extracts customizations
+3. **Code Generator** (`abapCodeGenerator`): Generates ABAP code from templates
+4. **Test Generator** (`testGenerator`): Creates comprehensive test suites
+5. **Deployment Guide Generator** (`deploymentGuide`): Writes step-by-step deployment documentation
+
+#### Multi-Agent Workflow
+
+```mermaid
+graph TD
+    A[User Request] --> B[Orchestrator Agent]
+    B -->|Delegate| C[Context Analyzer]
+    B -->|Delegate| D[Code Generator]
+    B -->|Delegate| E[Test Generator]
+    B -->|Delegate| F[Deployment Guide]
+    
+    C -->|SAP Analysis| G[analysis.json]
+    D -->|ABAP Code| H[Function Modules & OData]
+    E -->|Test Suites| I[Unit Tests & Postman]
+    F -->|Documentation| J[DEPLOYMENT_GUIDE.md]
+    
+    G --> K[Complete Package]
+    H --> K
+    I --> K
+    J --> K
+    
+    style B fill:#e1f5ff
+    style C fill:#fff4e1
+    style D fill:#fff4e1
+    style E fill:#fff4e1
+    style F fill:#fff4e1
+    style K fill:#e8f5e9
+```
+
+#### MCP Tools Integration
+
+```mermaid
+graph LR
+    A[Agents] --> B{MCP Server}
+    B --> C[parse_sap_table]
+    B --> D[validate_abap_syntax]
+    B --> E[generate_odata_metadata]
+    B --> F[extract_sap_customizations]
+    
+    C -->|DDIC Parser| G[Table Structures]
+    D -->|Syntax Validator| H[Code Validation]
+    E -->|OData Generator| I[Service Metadata]
+    F -->|Customization Parser| J[Z/Y Fields & Tables]
+    
+    style B fill:#e1f5ff
+    style C fill:#fff4e1
+    style D fill:#fff4e1
+    style E fill:#fff4e1
+    style F fill:#fff4e1
+```
+
+#### Generation Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Orchestrator
+    participant Context as Context Analyzer
+    participant Code as Code Generator
+    participant Test as Test Generator
+    participant Deploy as Deployment Guide
+    participant MCP as MCP Tools
+    
+    User->>Orchestrator: Generate Quote Endpoint
+    Orchestrator->>Context: Analyze SAP Config
+    Context->>MCP: extract_sap_customizations
+    Context->>MCP: parse_sap_table
+    MCP-->>Context: Customization Data
+    Context-->>Orchestrator: analysis.json
+    
+    Orchestrator->>Code: Generate ABAP Code
+    Code->>MCP: validate_abap_syntax
+    Code->>MCP: generate_odata_metadata
+    MCP-->>Code: Validated Code
+    Code-->>Orchestrator: ABAP Files
+    
+    Orchestrator->>Test: Generate Tests
+    Test-->>Orchestrator: Test Suites
+    
+    Orchestrator->>Deploy: Create Guide
+    Deploy-->>Orchestrator: Documentation
+    
+    Orchestrator-->>User: Complete Package
+    
+    Note over User,Deploy: All agents run with specialized prompts & tool access
+```
 
 ### MCP Tools
 
@@ -167,6 +253,33 @@ Custom Model Context Protocol (MCP) tools provide SAP-specific capabilities:
 - `validate_abap_syntax`: Validate generated ABAP code
 - `generate_odata_metadata`: Generate OData service metadata XML
 - `extract_sap_customizations`: Extract customizations from config files
+
+### Session Management
+
+The generator captures session IDs for resumption and forking:
+
+```typescript
+const { sessionId } = await generateQuoteEndpoint(request);
+
+// Resume the session to continue work
+const resumed = await generateQuoteEndpoint({
+  ...request,
+  resume: sessionId,
+  forkSession: false  // Continue original session
+});
+
+// Fork to try alternative approaches
+const forked = await generateQuoteEndpoint({
+  ...request,
+  resume: sessionId,
+  forkSession: true  // Create new branch
+});
+```
+
+**Benefits:**
+- **Resume interrupted generation** - Continue from where you left off
+- **Fork workflows** - Explore different approaches without losing original
+- **Session history** - Full conversation context preserved
 
 ## Development
 
