@@ -64,7 +64,7 @@ describe('Agent Definitions', () => {
     it('should have required agent properties', () => {
       expect(deploymentGuide.description).toContain('deployment');
       expect(deploymentGuide.prompt).toContain('deployment');
-      expect(deploymentGuide.prompt).toContain('documentation');
+      expect(deploymentGuide.prompt).toContain('DEPLOYMENT_GUIDE');
     });
 
     it('should have file tools', () => {
@@ -80,7 +80,7 @@ describe('Agent Definitions', () => {
   describe('quoteEndpointAgent', () => {
     it('should have required agent properties', () => {
       expect(quoteEndpointAgent.description).toContain('quote');
-      expect(quoteEndpointAgent.prompt).toContain('orchestrate');
+      expect(quoteEndpointAgent.prompt).toContain('delegate');
       expect(quoteEndpointAgent.prompt).toContain('generate');
     });
 

@@ -73,8 +73,9 @@ Field     Data Type    Length
 
     it('should handle custom ZZ fields', () => {
       const ddicExport = `
-ZZFIELD1    CHAR    10    Custom Field 1
-ZZFIELD2    NUMC    5     Custom Field 2
+Field         Data Type  Length  Description
+ZZFIELD1      CHAR       10      Custom Field 1
+ZZFIELD2      NUMC       5       Custom Field 2
 `;
 
       const result = DDICParser.parseTableStructure('TEST', ddicExport);
@@ -86,8 +87,8 @@ ZZFIELD2    NUMC    5     Custom Field 2
 
     it('should handle YY custom fields', () => {
       const ddicExport = `
-Field       Type    Length  Description
-YYFIELD1    CHAR    10      Custom Field
+Field         Data Type  Length  Description
+YYFIELD1      CHAR       10      Custom Field
 `;
 
       const result = DDICParser.parseTableStructure('TEST', ddicExport);
