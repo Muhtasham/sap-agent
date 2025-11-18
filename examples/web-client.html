@@ -242,6 +242,107 @@
             font-size: 12px;
             word-break: break-all;
         }
+
+        .progress-container {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .progress-header h3 {
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .progress-event {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #cbd5e0;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-event.init {
+            border-left-color: #667eea;
+        }
+
+        .progress-event.agent {
+            border-left-color: #48bb78;
+        }
+
+        .progress-event.tool {
+            border-left-color: #ed8936;
+        }
+
+        .progress-event.file {
+            border-left-color: #4299e1;
+        }
+
+        .progress-event.complete {
+            border-left-color: #38b2ac;
+        }
+
+        .progress-event.error {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .progress-icon {
+            margin-right: 12px;
+            font-size: 20px;
+        }
+
+        .progress-content {
+            flex: 1;
+        }
+
+        .progress-message {
+            font-size: 14px;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .progress-meta {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .cancel-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .cancel-btn:hover {
+            background: #f56565;
+        }
     </style>
 </head>
 <body>
@@ -326,12 +427,12 @@
                 </button>
             </form>
 
-            <div id="loading" style="display: none;" class="loading">
-                <div class="spinner"></div>
-                <p>Generating your SAP endpoint... This may take 5-15 minutes.</p>
-                <p style="font-size: 12px; color: #999; margin-top: 8px;">
-                    Our AI agents are analyzing your SAP configuration and generating production-ready code.
-                </p>
+            <div id="progress" style="display: none;" class="progress-container">
+                <div class="progress-header">
+                    <h3>⚡ Real-time Progress</h3>
+                    <button id="cancelBtn" class="cancel-btn" style="display: none;">Cancel</button>
+                </div>
+                <div id="progressEvents"></div>
             </div>
 
             <div id="result" style="display: none;"></div>
@@ -339,14 +440,17 @@
     </div>
 
     <script>
-        // Replace with your actual Modal endpoint URL
-        const MODAL_ENDPOINT = 'YOUR_MODAL_ENDPOINT_URL_HERE';
+        // API endpoint (default to localhost, replace with your deployed URL)
+        const API_BASE = window.location.origin;
+        const STREAM_ENDPOINT = `${API_BASE}/api/generate/stream`;
 
         const files = {};
         const fileUpload = document.getElementById('fileUpload');
         const fileInput = document.getElementById('fileInput');
         const fileList = document.getElementById('fileList');
         const form = document.getElementById('generatorForm');
+
+        let eventSource = null;
 
         // File upload handling
         fileUpload.addEventListener('click', () => fileInput.click());
@@ -393,7 +497,50 @@
             updateFileList();
         }
 
-        // Form submission
+        // Get icon for event type
+        function getEventIcon(type) {
+            const icons = {
+                init: '🚀',
+                progress: '⚙️',
+                agent: '🤖',
+                tool: '🔧',
+                file: '📄',
+                complete: '✅',
+                error: '❌'
+            };
+            return icons[type] || '•';
+        }
+
+        // Add progress event to UI
+        function addProgressEvent(event) {
+            const eventsContainer = document.getElementById('progressEvents');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = `progress-event ${event.type}`;
+
+            let metaText = '';
+            if (event.agent) {
+                metaText = `Agent: ${event.agent}`;
+            } else if (event.tool) {
+                metaText = `Tool: ${event.tool}`;
+            } else if (event.file) {
+                metaText = `File: ${event.file}`;
+            } else if (event.sessionId) {
+                metaText = `Session: ${event.sessionId}`;
+            }
+
+            eventDiv.innerHTML = `
+                <div class="progress-icon">${getEventIcon(event.type)}</div>
+                <div class="progress-content">
+                    <div class="progress-message">${event.message}</div>
+                    ${metaText ? `<div class="progress-meta">${metaText}</div>` : ''}
+                </div>
+            `;
+
+            eventsContainer.appendChild(eventDiv);
+            eventsContainer.scrollTop = eventsContainer.scrollHeight;
+        }
+
+        // Form submission with streaming
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -423,13 +570,15 @@
             const specialLogic = document.getElementById('specialLogic').value || null;
             const resumeSession = document.getElementById('resumeSession').value || null;
 
-            // Show loading
+            // Show progress container
             document.getElementById('generatorForm').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
+            document.getElementById('progress').style.display = 'block';
             document.getElementById('result').style.display = 'none';
+            document.getElementById('progressEvents').innerHTML = '';
 
             try {
-                const response = await fetch(MODAL_ENDPOINT, {
+                // Use fetch with ReadableStream for SSE
+                const response = await fetch(STREAM_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -445,55 +594,98 @@
                     }),
                 });
 
-                const data = await response.json();
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Generation failed');
+                }
 
-                // Show result
-                showResult(data);
+                // Read SSE stream
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const event = JSON.parse(line.substring(6));
+                                addProgressEvent(event);
+
+                                // Handle completion
+                                if (event.type === 'complete') {
+                                    setTimeout(() => {
+                                        showResult(event);
+                                    }, 500);
+                                } else if (event.type === 'error') {
+                                    setTimeout(() => {
+                                        showError(event.message);
+                                    }, 500);
+                                }
+                            } catch (e) {
+                                console.error('Failed to parse SSE message:', line, e);
+                            }
+                        }
+                    }
+                }
             } catch (error) {
                 showError(error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('generatorForm').style.display = 'block';
             }
         });
 
-        function showResult(data) {
+        function showResult(event) {
+            document.getElementById('progress').style.display = 'none';
+
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
 
-            if (data.exit_code === 0) {
-                resultDiv.className = 'result';
-                resultDiv.innerHTML = `
-                    <h3>✅ Generation Complete!</h3>
-                    <p>Successfully generated ${data.files.length} files</p>
+            const data = event.data || {};
+            const files = data.files || [];
 
-                    ${data.session_id ? `
-                        <div class="session-info">
-                            <h4>📋 Session ID</h4>
-                            <div class="session-id">${data.session_id}</div>
-                            <p style="font-size: 12px; margin-top: 8px; color: #555;">
-                                Save this ID to resume or fork this generation later
-                            </p>
-                        </div>
-                    ` : ''}
+            resultDiv.innerHTML = `
+                <h3>✅ Generation Complete!</h3>
+                <p>Successfully generated ${files.length} files for ${data.customer}</p>
 
-                    <div class="result-details">
-                        <strong>Generated Files:</strong>
-                        <ul style="margin-top: 8px; padding-left: 20px;">
-                            ${data.files.map(f => `<li>${f}</li>`).join('')}
-                        </ul>
+                ${event.sessionId ? `
+                    <div class="session-info">
+                        <h4>📋 Session ID</h4>
+                        <div class="session-id">${event.sessionId}</div>
+                        <p style="font-size: 12px; margin-top: 8px; color: #555;">
+                            Save this ID to resume or fork this generation later
+                        </p>
                     </div>
+                ` : ''}
 
-                    <p style="margin-top: 16px; font-size: 14px; color: #666;">
-                        Contact your administrator to download the generated code.
-                    </p>
-                `;
-            } else {
-                showError(`Generation failed with exit code ${data.exit_code}:\n${data.stderr}`);
-            }
+                <div class="result-details">
+                    <strong>Generated Files:</strong>
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        ${files.map(f => `<li>${f}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <p style="margin-top: 16px; font-size: 14px; color: #666;">
+                    <a href="/api/download/${data.customer}" style="color: #667eea; text-decoration: none;">
+                        Download generated code →
+                    </a>
+                </p>
+
+                <button onclick="resetForm()" class="btn" style="margin-top: 16px; background: #4299e1;">
+                    Generate Another Endpoint
+                </button>
+            `;
         }
 
         function showError(message) {
+            document.getElementById('progress').style.display = 'none';
+
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
             resultDiv.className = 'error';
@@ -503,7 +695,16 @@
                 <p style="font-size: 12px; margin-top: 12px;">
                     Please check your inputs and try again. Contact support if the problem persists.
                 </p>
+                <button onclick="resetForm()" class="btn" style="margin-top: 16px; background: #fc8181;">
+                    Try Again
+                </button>
             `;
+        }
+
+        function resetForm() {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('progress').style.display = 'none';
+            document.getElementById('generatorForm').style.display = 'block';
         }
     </script>
 </body>

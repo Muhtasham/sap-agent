@@ -9,6 +9,7 @@ import express from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { generateQuoteEndpoint } from './index';
+import { generateQuoteEndpointStreaming } from './streaming';
 import { SAPVersion } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -95,6 +96,200 @@ app.get('/api-docs.json', (_req, res) => {
  */
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', version: '1.0.1' });
+});
+
+/**
+ * @swagger
+ * /api/generate/stream:
+ *   post:
+ *     summary: Generate SAP ABAP endpoint code with real-time progress updates
+ *     description: Streams generation progress using Server-Sent Events (SSE) for real-time visibility into agent activity, tool usage, and file creation
+ *     tags: [Generation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - customer_name
+ *               - sap_version
+ *               - config_files
+ *               - quote_fields
+ *             properties:
+ *               customer_name:
+ *                 type: string
+ *                 description: Customer identifier (lowercase alphanumeric with hyphens/underscores)
+ *                 example: acme-corp
+ *               sap_version:
+ *                 type: string
+ *                 enum: [R3, ECC6, S4HANA]
+ *                 description: SAP system version
+ *                 example: ECC6
+ *               config_files:
+ *                 type: object
+ *                 description: SAP configuration files (filename -> content)
+ *                 additionalProperties:
+ *                   type: string
+ *                 example:
+ *                   VBAK_structure.txt: "Table: VBAK\nField Data Type Length Description\nVBELN CHAR 10 Document Number"
+ *               quote_fields:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Required fields for the quote endpoint
+ *                 example: ["customer_id", "quote_date", "valid_until", "total_amount"]
+ *               custom_fields:
+ *                 type: object
+ *                 description: Custom SAP fields (field name -> description)
+ *                 additionalProperties:
+ *                   type: string
+ *                 example:
+ *                   ZZPRIORITY: "Priority level"
+ *                   ZZREFERRAL: "Referral source"
+ *               special_logic:
+ *                 type: string
+ *                 description: Special business logic requirements
+ *                 example: "Apply 10% discount for VIP customers"
+ *               resume_session_id:
+ *                 type: string
+ *                 description: Session ID to resume previous generation
+ *                 example: "abc-123-xyz"
+ *               fork_session:
+ *                 type: boolean
+ *                 description: Whether to fork the resumed session
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Server-Sent Events stream of progress updates
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               example: |
+ *                 data: {"type":"init","message":"Starting SAP endpoint generation for acme-corp"}
+ *
+ *                 data: {"type":"progress","message":"Session initialized","sessionId":"abc-123"}
+ *
+ *                 data: {"type":"agent","agent":"Context Analyzer","message":"Analyzing SAP configuration and requirements"}
+ *
+ *                 data: {"type":"tool","tool":"parse_sap_table","message":"Parsing SAP table structures","agent":"Context Analyzer"}
+ *
+ *                 data: {"type":"agent","agent":"Code Generator","message":"Generating production-ready ABAP code"}
+ *
+ *                 data: {"type":"file","file":"Z_CREATE_QUOTE_ACME.abap","message":"Creating Z_CREATE_QUOTE_ACME.abap","agent":"Code Generator"}
+ *
+ *                 data: {"type":"complete","message":"Successfully generated 6 files","sessionId":"abc-123","data":{"files":["acme-corp/Z_CREATE_QUOTE_ACME.abap"],"customer":"acme-corp"}}
+ *
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Missing required fields: customer_name, sap_version, config_files, quote_fields"
+ *       500:
+ *         description: Generation failed
+ *         content:
+ *           text/event-stream:
+ *             schema:
+ *               type: string
+ *               example: |
+ *                 data: {"type":"error","message":"Generation failed: API key not configured","data":{"error":"API key not configured"}}
+ *
+ */
+app.post('/api/generate/stream', async (req, res) => {
+  try {
+    const {
+      customer_name,
+      sap_version,
+      config_files,
+      quote_fields,
+      custom_fields,
+      special_logic,
+      resume_session_id,
+      fork_session,
+    } = req.body;
+
+    // Validate inputs
+    if (!customer_name || !sap_version || !config_files || !quote_fields) {
+      return res.status(400).json({
+        error: 'Missing required fields: customer_name, sap_version, config_files, quote_fields',
+      });
+    }
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+
+    // Create temp directory for config files
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sap-gen-'));
+    const configPaths: string[] = [];
+
+    try {
+      // Write config files
+      for (const [filename, content] of Object.entries(config_files)) {
+        const filepath = path.join(tempDir, filename);
+        fs.writeFileSync(filepath, content as string);
+        configPaths.push(filepath);
+      }
+
+      console.log(`[${new Date().toISOString()}] Starting streaming generation for ${customer_name}`);
+
+      // Stream progress updates
+      for await (const progress of generateQuoteEndpointStreaming({
+        customerName: customer_name,
+        sapVersion: sap_version as SAPVersion,
+        configFiles: configPaths,
+        requirements: {
+          quoteFields: quote_fields,
+          customFields: custom_fields,
+          specialLogic: special_logic,
+        },
+        resume: resume_session_id,
+        forkSession: fork_session,
+      })) {
+        // Send SSE message
+        res.write(`data: ${JSON.stringify(progress)}\n\n`);
+
+        // Check if client disconnected
+        if (req.destroyed) {
+          console.log(`[${new Date().toISOString()}] Client disconnected, stopping generation`);
+          break;
+        }
+      }
+
+      console.log(`[${new Date().toISOString()}] Streaming generation complete for ${customer_name}`);
+
+      // End the stream
+      res.end();
+    } finally {
+      // Clean up temp files
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+
+    return;
+  } catch (error: any) {
+    console.error('Streaming generation error:', error);
+
+    // Send error event
+    res.write(`data: ${JSON.stringify({
+      type: 'error',
+      message: error.message,
+      data: {
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      },
+    })}\n\n`);
+
+    res.end();
+    return;
+  }
 });
 
 /**
@@ -477,7 +672,8 @@ Server running on: http://localhost:${port}
 
 Endpoints:
   GET    /health                    - Health check
-  POST   /api/generate              - Generate SAP endpoint
+  POST   /api/generate              - Generate SAP endpoint (blocking)
+  POST   /api/generate/stream       - Generate SAP endpoint (streaming SSE)
   GET    /api/download/:customer    - Download generated code
   GET    /api/customers             - List all customers
 

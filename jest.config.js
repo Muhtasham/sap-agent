@@ -13,6 +13,7 @@ module.exports = {
     '!src/**/*.test.ts',
     '!src/cli.ts',
     '!src/index.ts',
+    '!src/streaming.ts',
     '!src/modal-server.ts',
     '!src/agents/**',
   ],
