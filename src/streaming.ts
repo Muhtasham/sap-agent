@@ -11,6 +11,11 @@ import { testGenerator } from './agents/test-generator';
 import { deploymentGuide } from './agents/deployment-guide';
 import * as path from 'path';
 import * as fs from 'fs';
+import {
+  createSapMcpServer,
+  SAP_MCP_ALLOWED_TOOL_NAMES,
+  SAP_MCP_SERVER_NAME,
+} from './mcp-server/server';
 
 export interface ProgressUpdate {
   type: 'init' | 'progress' | 'agent' | 'tool' | 'file' | 'complete' | 'error';
@@ -25,7 +30,7 @@ export interface ProgressUpdate {
 /**
  * Build the main prompt for the orchestrator agent
  */
-function buildMainPrompt(request: GenerateEndpointRequest): string {
+function buildMainPrompt(request: GenerateEndpointRequest, outputDir: string): string {
   const customFieldsDesc = request.requirements.customFields
     ? Object.entries(request.requirements.customFields)
         .map(([field, desc]) => `  - ${field}: ${desc}`)
@@ -53,7 +58,7 @@ ${request.requirements.specialLogic || '(None specified)'}
 
 DELIVERABLES:
 
-Please generate the following files and save them to ./output/${request.customerName}/:
+Please generate the following files and save them to ${outputDir}/${request.customerName}/:
 
 1. Function Module: Z_CREATE_QUOTE_${request.customerName.toUpperCase()}.abap
 2. OData Service: Z${request.customerName.toUpperCase()}_QUOTE_SRV.xml
@@ -74,6 +79,17 @@ export async function* generateQuoteEndpointStreaming(
 ): AsyncGenerator<ProgressUpdate> {
   const outputDir = request.outputDir || './output';
   const customerDir = path.join(outputDir, request.customerName);
+  const sapMcpServer = createSapMcpServer();
+  const allowedTools = [
+    'Read',
+    'Write',
+    'Edit',
+    'Grep',
+    'Glob',
+    'Bash',
+    'Task',
+    ...SAP_MCP_ALLOWED_TOOL_NAMES,
+  ];
 
   // Ensure output directory exists
   if (!fs.existsSync(customerDir)) {
@@ -86,18 +102,24 @@ export async function* generateQuoteEndpointStreaming(
   };
 
   // Build the main prompt
-  const prompt = buildMainPrompt(request);
+  const prompt = buildMainPrompt(request, outputDir);
 
   // Create streaming input generator
-  // Note: We yield simplified message objects as shown in SDK docs
-  // The SDK internally adds session_id and other metadata
+  // Note: SDK expects full SDKUserMessage objects in streaming mode
   async function* generateMessages() {
     yield {
       type: 'user' as const,
+      session_id: request.resume ?? '',
       message: {
         role: 'user' as const,
-        content: prompt,
+        content: [
+          {
+            type: 'text' as const,
+            text: prompt,
+          },
+        ],
       },
+      parent_tool_use_id: null,
     };
   }
 
@@ -124,15 +146,12 @@ export async function* generateQuoteEndpointStreaming(
         },
 
         // Allow all necessary tools
-        allowedTools: [
-          'Read',
-          'Write',
-          'Edit',
-          'Grep',
-          'Glob',
-          'Bash',
-          'Task',
-        ],
+        allowedTools,
+
+        // Register SAP-specific MCP tools
+        mcpServers: {
+          [SAP_MCP_SERVER_NAME]: sapMcpServer,
+        },
 
         // Use Claude Code system prompt for best file handling
         systemPrompt: {

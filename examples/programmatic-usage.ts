@@ -11,26 +11,17 @@ import {
   testGenerator,
   deploymentGuide
 } from '../src/agents';
-import { parseSapTableTool } from '../src/mcp-server/tools/parse-table';
-import { validateAbapSyntax } from '../src/mcp-server/tools/validate-abap';
-import { generateODataMetadata } from '../src/mcp-server/tools/generate-metadata';
-import { extractCustomizations } from '../src/mcp-server/tools/extract-customizations';
-import { createSdkMcpServer } from '@modelcontextprotocol/sdk/server/index.js';
+import {
+  createSapMcpServer,
+  SAP_MCP_ALLOWED_TOOL_NAMES,
+  SAP_MCP_SERVER_NAME
+} from '../src/mcp-server/server';
 
 async function programmaticExample() {
   console.log('=== Programmatic SAP Endpoint Generator Example ===\n');
 
   // Create the MCP server with SAP tools
-  const sapTools = createSdkMcpServer({
-    name: 'sap-tools',
-    version: '1.0.0',
-    tools: [
-      parseSapTableTool,
-      validateAbapSyntax,
-      generateODataMetadata,
-      extractCustomizations
-    ]
-  });
+  const sapTools = createSapMcpServer();
 
   // Define the generation task
   const generationTask = `
@@ -69,10 +60,17 @@ Save all files to the output directory.
     async function* generateMessages() {
       yield {
         type: 'user' as const,
+        session_id: '',
         message: {
           role: 'user' as const,
-          content: generationTask
-        }
+          content: [
+            {
+              type: 'text' as const,
+              text: generationTask
+            }
+          ]
+        },
+        parent_tool_use_id: null
       };
     }
 
@@ -94,16 +92,13 @@ Save all files to the output directory.
 
         // Register MCP server with SAP tools
         mcpServers: {
-          'sap-tools': sapTools
+          [SAP_MCP_SERVER_NAME]: sapTools
         },
 
         // Allow necessary tools
         allowedTools: [
           'Read', 'Write', 'Edit', 'Grep', 'Glob', 'Task',
-          'mcp__sap-tools__parse_sap_table',
-          'mcp__sap-tools__validate_abap_syntax',
-          'mcp__sap-tools__generate_odata_metadata',
-          'mcp__sap-tools__extract_sap_customizations'
+          ...SAP_MCP_ALLOWED_TOOL_NAMES
         ],
 
         // Configuration

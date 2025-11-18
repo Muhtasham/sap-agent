@@ -30,12 +30,18 @@ async function generateWithModal() {
   });
   console.log('✓ Volume ready for persistent storage');
 
-  // 4. Create sandbox
+  // 4. Create sandbox (with optional secrets for API keys)
   console.log('\nCreating sandbox...');
+
+  // Optional: Load secrets for API keys (recommended for production)
+  // const secret = await modal.secrets.fromName('my-secret-name');
+
   const sb = await modal.sandboxes.create(app, image, {
     volumes: { '/output': volume },
     timeoutMs: 30 * 60 * 1000, // 30 minutes
+    idleTimeoutMs: 5 * 60 * 1000, // 5 minutes idle timeout
     workdir: '/workspace',
+    // secrets: [secret],  // Uncomment to use secrets
   });
   console.log('✓ Sandbox created:', sb.sandboxId);
   console.log(`  Use: modal.sandboxes.fromId('${sb.sandboxId}') to reconnect\n`);

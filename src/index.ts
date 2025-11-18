@@ -11,6 +11,11 @@ import { testGenerator } from './agents/test-generator';
 import { deploymentGuide } from './agents/deployment-guide';
 import * as path from 'path';
 import * as fs from 'fs';
+import {
+  createSapMcpServer,
+  SAP_MCP_ALLOWED_TOOL_NAMES,
+  SAP_MCP_SERVER_NAME,
+} from './mcp-server/server';
 
 /**
  * Generate a complete SAP quote creation endpoint
@@ -20,6 +25,17 @@ export async function generateQuoteEndpoint(
 ): Promise<{ messages: any[]; result: any; sessionId?: string }> {
   const outputDir = request.outputDir || './output';
   const customerDir = path.join(outputDir, request.customerName);
+  const sapMcpServer = createSapMcpServer();
+  const allowedTools = [
+    'Read',
+    'Write',
+    'Edit',
+    'Grep',
+    'Glob',
+    'Bash',
+    'Task',
+    ...SAP_MCP_ALLOWED_TOOL_NAMES,
+  ];
 
   // Ensure output directory exists
   if (!fs.existsSync(customerDir)) {
@@ -27,7 +43,25 @@ export async function generateQuoteEndpoint(
   }
 
   // Build the main prompt
-  const prompt = buildMainPrompt(request);
+  const prompt = buildMainPrompt(request, outputDir);
+
+  // Streaming input per SDK guidance for richer interactions
+  async function* generateMessages() {
+    yield {
+      type: 'user' as const,
+      session_id: request.resume ?? '',
+      message: {
+        role: 'user' as const,
+        content: [
+          {
+            type: 'text' as const,
+            text: prompt,
+          },
+        ],
+      },
+      parent_tool_use_id: null,
+    };
+  }
 
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗
@@ -42,7 +76,7 @@ Starting code generation...
 `);
 
   const result = query({
-    prompt,
+    prompt: generateMessages() as any,
     options: {
       cwd: process.cwd(),
 
@@ -58,15 +92,12 @@ Starting code generation...
       },
 
       // Allow all necessary tools
-      allowedTools: [
-        'Read',
-        'Write',
-        'Edit',
-        'Grep',
-        'Glob',
-        'Bash',
-        'Task',
-      ],
+      allowedTools,
+
+      // Register SAP-specific MCP tools
+      mcpServers: {
+        [SAP_MCP_SERVER_NAME]: sapMcpServer,
+      },
 
       // Use Claude Code system prompt for best file handling
       systemPrompt: {
@@ -174,7 +205,7 @@ For support or issues, please contact the development team.
 /**
  * Build the main prompt for the orchestrator agent
  */
-function buildMainPrompt(request: GenerateEndpointRequest): string {
+function buildMainPrompt(request: GenerateEndpointRequest, outputDir: string): string {
   const customFieldsDesc = request.requirements.customFields
     ? Object.entries(request.requirements.customFields)
         .map(([field, desc]) => `  - ${field}: ${desc}`)
@@ -202,7 +233,7 @@ ${request.requirements.specialLogic || '(None specified)'}
 
 DELIVERABLES:
 
-Please generate the following files and save them to ./output/${request.customerName}/:
+Please generate the following files and save them to ${outputDir}/${request.customerName}/:
 
 1. analysis.json - Complete SAP system analysis
 2. Z_CREATE_QUOTE_${request.customerName.toUpperCase()}.abap - Function module
@@ -220,7 +251,7 @@ Step 1: ANALYZE SAP CONFIGURATION
 - Use the Task tool to delegate to the 'sap-context' agent
 - Task: "Analyze SAP configuration files and extract all customizations"
 - The agent should use the extract_sap_customizations and parse_sap_table tools
-- Save results to ./output/${request.customerName}/analysis.json
+- Save results to ${outputDir}/${request.customerName}/analysis.json
 
 Step 2: GENERATE ABAP CODE
 - Use the Task tool to delegate to the 'abap-generator' agent

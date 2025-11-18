@@ -1,8 +1,8 @@
 /**
- * Simple HTTP Server for SAP Endpoint Generator
+ * HTTP API Server for SAP Endpoint Generator
  *
- * This server accepts HTTP requests and generates SAP code.
- * Can be deployed anywhere (Modal, AWS, GCP, Azure, etc.)
+ * Simple Express server that accepts HTTP requests and generates SAP code.
+ * For production Modal deployment with sandboxing, see src/modal-deployment.ts
  */
 
 import express from 'express';
@@ -56,7 +56,7 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ['./src/modal-server.ts'], // Path to the API routes
+  apis: ['./src/api-server.ts'], // Path to the API routes
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -232,9 +232,17 @@ app.post('/api/generate/stream', async (req, res) => {
     const configPaths: string[] = [];
 
     try {
-      // Write config files
+      // Write config files (sanitize filenames to prevent path traversal)
       for (const [filename, content] of Object.entries(config_files)) {
-        const filepath = path.join(tempDir, filename);
+        // Use basename to strip any directory traversal attempts (../, etc.)
+        const safeFilename = path.basename(filename);
+
+        // Additional validation: reject if basename is different (contained path separators)
+        if (safeFilename !== filename) {
+          throw new Error(`Invalid filename: ${filename} (path traversal attempt detected)`);
+        }
+
+        const filepath = path.join(tempDir, safeFilename);
         fs.writeFileSync(filepath, content as string);
         configPaths.push(filepath);
       }
@@ -424,9 +432,17 @@ app.post('/api/generate', async (req, res) => {
     const configPaths: string[] = [];
 
     try {
-      // Write config files
+      // Write config files (sanitize filenames to prevent path traversal)
       for (const [filename, content] of Object.entries(config_files)) {
-        const filepath = path.join(tempDir, filename);
+        // Use basename to strip any directory traversal attempts (../, etc.)
+        const safeFilename = path.basename(filename);
+
+        // Additional validation: reject if basename is different (contained path separators)
+        if (safeFilename !== filename) {
+          throw new Error(`Invalid filename: ${filename} (path traversal attempt detected)`);
+        }
+
+        const filepath = path.join(tempDir, safeFilename);
         fs.writeFileSync(filepath, content as string);
         configPaths.push(filepath);
       }
@@ -533,6 +549,14 @@ app.post('/api/generate', async (req, res) => {
 app.get('/api/download/:customer', (req, res) => {
   try {
     const { customer } = req.params;
+
+    // Validate customer name to prevent path traversal and command injection
+    if (!/^[a-z0-9_-]+$/.test(customer)) {
+      return res.status(400).json({
+        error: 'Invalid customer name. Must be lowercase alphanumeric with optional underscores/hyphens.',
+      });
+    }
+
     const outputDir = path.join('./output', customer);
 
     if (!fs.existsSync(outputDir)) {
@@ -541,13 +565,18 @@ app.get('/api/download/:customer', (req, res) => {
       });
     }
 
-    // Create tar.gz archive
+    // Create tar.gz archive (using spawnSync to prevent command injection)
     const archivePath = path.join(os.tmpdir(), `${customer}-code.tar.gz`);
-    const { execSync } = require('child_process');
+    const { spawnSync } = require('child_process');
 
-    execSync(`tar -czf "${archivePath}" -C ./output "${customer}"`, {
+    // Use argument array instead of shell string to prevent command injection
+    const result = spawnSync('tar', ['-czf', archivePath, '-C', './output', customer], {
       encoding: 'utf8',
     });
+
+    if (result.error || result.status !== 0) {
+      throw new Error(`Failed to create archive: ${result.stderr || result.error}`);
+    }
 
     return res.download(archivePath, `${customer}-code.tar.gz`, (err) => {
       // Clean up

@@ -3,26 +3,23 @@
  */
 
 import { z } from 'zod';
+import { tool } from '@anthropic-ai/claude-agent-sdk';
 import { DDICParser } from '../../parsers/ddic-parser';
 
-export const parseSapTableTool = {
-  name: 'parse_sap_table',
-  description: 'Parse SAP table structure from DDIC export or SE11 documentation',
-  parameters: {
-    type: 'object' as const,
-    properties: {
-      table_name: {
-        type: 'string',
-        description: 'SAP table name (e.g., VBAK, VBAP)',
-      },
-      ddic_export: {
-        type: 'string',
-        description: 'DDIC export text or SE11 structure output',
-      },
-    },
-    required: ['table_name', 'ddic_export'],
-  },
-  async handler(args: z.infer<typeof argsSchema>) {
+const parseSapTableArgs = {
+  table_name: z.string(),
+  ddic_export: z.string(),
+};
+
+const parseSapTableSchema = z.object(parseSapTableArgs);
+
+type ParseSapTableInput = z.infer<typeof parseSapTableSchema>;
+
+export const parseSapTableTool = tool(
+  'parse_sap_table',
+  'Parse SAP table structure from DDIC export or SE11 documentation',
+  parseSapTableArgs,
+  async (args: ParseSapTableInput) => {
     try {
       const tableStructure = DDICParser.parseTableStructure(
         args.table_name,
@@ -63,10 +60,5 @@ export const parseSapTableTool = {
         isError: true,
       };
     }
-  },
-};
-
-const argsSchema = z.object({
-  table_name: z.string(),
-  ddic_export: z.string(),
-});
+  }
+);

@@ -18,7 +18,7 @@
     "example:basic": "ts-node examples/basic-usage.ts",
     "example:advanced": "ts-node examples/advanced-usage.ts",
     "example:programmatic": "ts-node examples/programmatic-usage.ts",
-    "serve": "npm run build && node dist/modal-server.js",
+    "serve": "npm run build && node dist/api-server.js",
     "modal:example": "ts-node examples/modal-sandbox.ts",
     "prepublishOnly": "npm run clean && npm run build && npm test"
   },

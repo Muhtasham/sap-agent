@@ -3,28 +3,24 @@
  */
 
 import { z } from 'zod';
+import { tool } from '@anthropic-ai/claude-agent-sdk';
 import { ABAPSyntaxValidator } from '../../validators/abap-syntax';
 import { SAPVersion } from '../../types';
 
-export const validateAbapSyntax = {
-  name: 'validate_abap_syntax',
-  description: 'Perform basic ABAP syntax validation',
-  parameters: {
-    type: 'object' as const,
-    properties: {
-      code: {
-        type: 'string',
-        description: 'ABAP code to validate',
-      },
-      sap_version: {
-        type: 'string',
-        enum: ['R3', 'ECC6', 'S4HANA'],
-        description: 'Target SAP version',
-      },
-    },
-    required: ['code', 'sap_version'],
-  },
-  async handler(args: z.infer<typeof argsSchema>) {
+const validateAbapArgs = {
+  code: z.string(),
+  sap_version: z.enum(['R3', 'ECC6', 'S4HANA']),
+};
+
+const validateAbapSchema = z.object(validateAbapArgs);
+
+type ValidateAbapInput = z.infer<typeof validateAbapSchema>;
+
+export const validateAbapSyntax = tool(
+  'validate_abap_syntax',
+  'Perform basic ABAP syntax validation',
+  validateAbapArgs,
+  async (args: ValidateAbapInput) => {
     try {
       const validation = ABAPSyntaxValidator.validate(
         args.code,
@@ -66,10 +62,5 @@ export const validateAbapSyntax = {
         isError: true,
       };
     }
-  },
-};
-
-const argsSchema = z.object({
-  code: z.string(),
-  sap_version: z.enum(['R3', 'ECC6', 'S4HANA']),
-});
+  }
+);

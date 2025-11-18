@@ -1,6 +1,6 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: '<rootDir>/tests/custom-node-environment.js',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   setupFiles: ['<rootDir>/jest.setup.js'],
@@ -14,7 +14,8 @@ module.exports = {
     '!src/cli.ts',
     '!src/index.ts',
     '!src/streaming.ts',
-    '!src/modal-server.ts',
+    '!src/api-server.ts',
+    '!src/modal-deployment.ts',
     '!src/agents/**',
   ],
   coverageThreshold: {
@@ -27,6 +28,7 @@ module.exports = {
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^@anthropic-ai/claude-agent-sdk$': '<rootDir>/tests/mocks/anthropic-sdk.ts',
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@anthropic-ai|@modelcontextprotocol)/)',

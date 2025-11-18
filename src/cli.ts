@@ -29,10 +29,9 @@ program
     'SAP configuration file paths (space-separated)'
   )
   .option('-o, --output <dir>', 'Output directory', './output')
-  .option(
+  .requiredOption(
     '--fields <fields...>',
-    'Required quote fields',
-    'customer_id quote_date valid_until total_amount currency'.split(' ')
+    'Required quote fields (space-separated)'
   )
   .option('--custom-fields <json>', 'Custom fields as JSON string')
   .option('--special-logic <text>', 'Special business logic description')

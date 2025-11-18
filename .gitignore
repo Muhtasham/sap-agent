@@ -59,3 +59,5 @@ logs/
 *.tsbuildinfo
 
 CLAUDE.MD
+PROJECT_CONTEXT.md
+ram.md

@@ -3,93 +3,46 @@
  * Provides tools for analyzing SAP systems and validating generated code
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-
 import { parseSapTableTool } from './tools/parse-table';
 import { validateAbapSyntax } from './tools/validate-abap';
 import { generateODataMetadata } from './tools/generate-metadata';
 import { extractCustomizations } from './tools/extract-customizations';
 
+export const SAP_MCP_SERVER_NAME = 'sap-tools';
+const SAP_MCP_VERSION = '1.0.0';
+
+const SAP_MCP_TOOLS = [
+  parseSapTableTool,
+  validateAbapSyntax,
+  generateODataMetadata,
+  extractCustomizations,
+];
+
+export const SAP_MCP_ALLOWED_TOOL_NAMES = SAP_MCP_TOOLS.map(
+  (tool) => `mcp__${SAP_MCP_SERVER_NAME}__${tool.name}`
+);
+
 /**
- * Create and configure the SAP MCP server
+ * Create and configure the SAP MCP server using the Agent SDK helper
  */
-export async function createSapMcpServer() {
-  const server = new Server(
-    {
-      name: 'sap-tools',
-      version: '1.0.0',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
-
-  // Register all SAP tools
-  const tools = [
-    parseSapTableTool,
-    validateAbapSyntax,
-    generateODataMetadata,
-    extractCustomizations,
-  ];
-
-  // Handle tool listing
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: tools.map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.parameters,
-      })),
-    };
+export function createSapMcpServer() {
+  return createSdkMcpServer({
+    name: SAP_MCP_SERVER_NAME,
+    version: SAP_MCP_VERSION,
+    tools: SAP_MCP_TOOLS,
   });
-
-  // Handle tool calls
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const toolName = request.params.name;
-    const tool = tools.find((t) => t.name === toolName);
-
-    if (!tool) {
-      throw new Error(`Unknown tool: ${toolName}`);
-    }
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await tool.handler(request.params.arguments || {} as any);
-      return result;
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              error: `Tool execution failed: ${toolName}`,
-              message: error instanceof Error ? error.message : String(error),
-            }),
-          },
-        ],
-        isError: true,
-      };
-    }
-  });
-
-  return server;
 }
 
 /**
- * Start the MCP server
+ * Start the MCP server over stdio (useful for manual debugging)
  */
 export async function startMcpServer() {
-  const server = await createSapMcpServer();
+  const serverConfig = createSapMcpServer();
   const transport = new StdioServerTransport();
 
-  await server.connect(transport);
+  await serverConfig.instance.connect(transport);
 
   console.error('SAP MCP Server running on stdio');
 }
