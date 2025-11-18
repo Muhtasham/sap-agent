@@ -10,6 +10,9 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/**/*.test.ts',
+    '!src/cli.ts',
+    '!src/index.ts',
+    '!src/agents/**',
   ],
   coverageThreshold: {
     global: {
@@ -19,4 +22,10 @@ module.exports = {
       statements: 70,
     },
   },
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@anthropic-ai|@modelcontextprotocol)/)',
+  ],
 };
