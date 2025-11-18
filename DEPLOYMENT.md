@@ -13,54 +13,81 @@ The Modal deployment provides:
 
 ## Prerequisites
 
-1. **Modal Account**
+1. **Modal Account & CLI**
    ```bash
+   # Install Modal CLI (Python-based CLI tool)
    pip install modal
    modal setup
    ```
 
-2. **Anthropic API Key**
+2. **Modal JavaScript SDK**
    ```bash
+   # Already installed in this project
+   npm install modal
+   ```
+
+3. **Anthropic API Key**
+   ```bash
+   # Create secret in Modal (do this once)
    modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-...
    ```
 
-3. **Build and Test Locally**
+4. **Build and Test Locally**
    ```bash
    npm install
    npm run build
    npm test
    ```
 
-## Deployment Steps
+## Deployment Approaches
 
-### 1. Deploy to Modal
+### Approach 1: TypeScript SDK (Recommended)
 
+Run Modal sandboxes directly from your TypeScript/Node.js application. Best for:
+- Integrating with existing Node.js backends
+- Full control over sandbox lifecycle
+- Type-safe API
+
+**Start the API server:**
 ```bash
-# Deploy the functions
-modal deploy src/modal-deployment.py
+# Build the project
+npm run build
 
-# This will output URLs like:
-# ✓ Created web endpoint => https://your-org--sap-endpoint-generator-api-generate.modal.run
+# Start the HTTP server (uses Modal sandboxes internally)
+node dist/modal-deployment.js serve 3000
 ```
 
-### 2. Test the Deployment
+This starts an HTTP API at `http://localhost:3000` that creates Modal sandboxes on-demand.
 
+**Test the API:**
 ```bash
-# Test locally first (uses Modal but runs from your machine)
-modal run src/modal-deployment.py --customer test-pilot
-
-# Or test the HTTP endpoint directly
-curl -X POST https://your-org--sap-endpoint-generator-api-generate.modal.run \
+curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
   -d '{
     "customer_name": "acme",
     "sap_version": "ECC6",
     "config_files": {
-      "VBAK_structure.txt": "Table: VBAK\n..."
+      "VBAK_structure.txt": "Table: VBAK\nField Data Type Length Description\nVBELN CHAR 10 Document Number"
     },
     "quote_fields": ["customer_id", "quote_date", "total_amount"]
   }'
 ```
+
+**Download generated code:**
+```bash
+curl http://localhost:3000/api/download/acme -o acme-code.tar.gz
+```
+
+### Approach 2: Simple Script
+
+For one-off generations or testing:
+
+```bash
+# Run the example
+npx ts-node examples/modal-simple.ts
+```
+
+This creates a sandbox, generates code, and cleans up.
 
 ### 3. Monitor Usage
 
@@ -68,7 +95,7 @@ curl -X POST https://your-org--sap-endpoint-generator-api-generate.modal.run \
 # View running sandboxes
 modal app list
 
-# Check logs
+# List sandboxes for specific app
 modal app logs sap-endpoint-generator
 
 # View storage usage

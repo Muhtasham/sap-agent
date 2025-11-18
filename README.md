@@ -301,33 +301,34 @@ sap-generate quote --resume abc-123-xyz --fork --customer acme --sap-version ECC
 
 ## Production Deployment
 
-### Deploy to Modal
+### Deploy to Modal (TypeScript SDK)
 
 For pilot customers and production use, deploy to Modal for serverless, on-demand code generation:
 
 ```bash
-# Install Modal
+# Install Modal CLI (one-time setup)
 pip install modal
-
-# Set up Modal account
 modal setup
 
 # Add your Anthropic API key
 modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-...
 
-# Deploy
-modal deploy src/modal-deployment.py
+# Start the API server (uses Modal sandboxes internally)
+npm run build
+node dist/modal-deployment.js serve 3000
 ```
 
-This creates an HTTP endpoint you can integrate with your web app:
+This creates an HTTP API that spawns Modal sandboxes on-demand:
 
 ```bash
-curl -X POST https://your-org--sap-endpoint-generator-api-generate.modal.run \
+curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
   -d '{
     "customer_name": "acme",
     "sap_version": "ECC6",
-    "config_files": {...},
+    "config_files": {
+      "VBAK_structure.txt": "Table: VBAK\n..."
+    },
     "quote_fields": ["customer_id", "quote_date"]
   }'
 ```
