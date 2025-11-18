@@ -125,7 +125,7 @@ export class ABAPSyntaxValidator {
   /**
    * Check variable declarations
    */
-  private static checkVariableDeclarations(code: string, errors: string[], warnings: string[]): void {
+  private static checkVariableDeclarations(code: string, _errors: string[], warnings: string[]): void {
     const declared = new Set<string>();
     const used = new Set<string>();
     const lines = code.split('\n');
@@ -168,7 +168,7 @@ export class ABAPSyntaxValidator {
   private static checkForbiddenSyntax(
     code: string,
     sapVersion: SAPVersion,
-    errors: string[],
+    _errors: string[],
     warnings: string[]
   ): void {
     const lines = code.split('\n');
@@ -227,13 +227,24 @@ export class ABAPSyntaxValidator {
    * Check for transaction safety
    */
   private static checkTransactionSafety(code: string, warnings: string[]): void {
-    const hasInsert = code.toUpperCase().includes('INSERT');
-    const hasUpdate = code.toUpperCase().includes('UPDATE');
-    const hasDelete = code.toUpperCase().includes('DELETE');
-    const hasModify = code.toUpperCase().includes('MODIFY');
+    // Filter out comments to avoid false positives
+    const lines = code.split('\n');
+    const codeWithoutComments = lines
+      .filter(line => {
+        const trimmed = line.trim();
+        return !trimmed.startsWith('*') && !trimmed.startsWith('"');
+      })
+      .join('\n');
 
-    const hasCommit = code.toUpperCase().includes('COMMIT WORK');
-    const hasRollback = code.toUpperCase().includes('ROLLBACK WORK');
+    const upperCode = codeWithoutComments.toUpperCase();
+
+    const hasInsert = upperCode.includes('INSERT');
+    const hasUpdate = upperCode.includes('UPDATE');
+    const hasDelete = upperCode.includes('DELETE');
+    const hasModify = upperCode.includes('MODIFY');
+
+    const hasCommit = upperCode.includes('COMMIT WORK');
+    const hasRollback = upperCode.includes('ROLLBACK WORK');
 
     if ((hasInsert || hasUpdate || hasDelete || hasModify) && !hasCommit) {
       warnings.push('Database modifications found but no COMMIT WORK statement');

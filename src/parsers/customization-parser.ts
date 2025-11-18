@@ -3,7 +3,7 @@
  * Extracts custom fields, user exits, and enhancements
  */
 
-import { SAPCustomization, SAPField } from '../types';
+import { SAPCustomization } from '../types';
 import { DDICParser } from './ddic-parser';
 import * as fs from 'fs';
 
@@ -13,7 +13,7 @@ export class CustomizationParser {
    */
   static async analyzeConfigs(
     configFiles: string[],
-    focusArea?: 'tables' | 'fields' | 'bapis' | 'exits'
+    _focusArea?: 'tables' | 'fields' | 'bapis' | 'exits'
   ): Promise<Partial<SAPCustomization>> {
     const result: Partial<SAPCustomization> = {
       tables: [],
@@ -105,16 +105,18 @@ export class CustomizationParser {
     const lines = content.split('\n');
 
     for (const line of lines) {
-      // Custom tables (Z* or Y*)
-      const tableMatch = line.match(/\b([ZY][A-Z0-9_]+)\b/);
-      if (tableMatch && tableMatch[1].length > 3) {
-        tables.push(tableMatch[1]);
+      // Custom tables (Z* or Y*) - use matchAll to get all matches
+      const tableMatches = line.matchAll(/\b([ZY][A-Z0-9_]+)\b/g);
+      for (const match of tableMatches) {
+        if (match[1].length > 3) {
+          tables.push(match[1]);
+        }
       }
 
-      // Custom fields (ZZ* or YY*)
-      const fieldMatch = line.match(/\b([ZY]{2}[A-Z0-9_]+)\b/);
-      if (fieldMatch) {
-        fields.push(fieldMatch[1]);
+      // Custom fields (ZZ* or YY*) - use matchAll to get all matches
+      const fieldMatches = line.matchAll(/\b([ZY]{2}[A-Z0-9_]+)\b/g);
+      for (const match of fieldMatches) {
+        fields.push(match[1]);
       }
     }
 

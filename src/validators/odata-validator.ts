@@ -143,7 +143,7 @@ export class ODataValidator {
   /**
    * Map SAP ABAP type to OData EDM type
    */
-  static mapAbapTypeToOData(abapType: string, length?: number, decimals?: number): string {
+  static mapAbapTypeToOData(abapType: string, _length?: number, _decimals?: number): string {
     const typeMap: Record<string, string> = {
       'CHAR': 'Edm.String',
       'NUMC': 'Edm.String',
