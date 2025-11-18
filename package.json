@@ -1,6 +1,6 @@
 {
   "name": "@sap-agent/endpoint-generator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered SAP ABAP code generator for OData endpoints using Claude Agent SDK",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

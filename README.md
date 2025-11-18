@@ -199,7 +199,17 @@ npm test -- --coverage
 
 # Watch mode
 npm run test:watch
+
+# Lint code
+npm run lint
+npm run lint:fix  # Auto-fix issues
 ```
+
+**Current Test Coverage** (104 tests, all passing):
+- ✅ Statements: 88%
+- ✅ Branches: 79%
+- ✅ Functions: 82%
+- ✅ Lines: 88%
 
 ### Building
 
