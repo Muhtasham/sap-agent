@@ -1,0 +1,104 @@
+SAP Custom Field Configuration
+Customer: AskLio
+Generated: 2024-01-15
+
+================================================================================
+CUSTOM FIELDS ADDED TO STANDARD TABLES
+================================================================================
+
+Table: VBAK (Sales Document Header)
+------------------------------------
+
+Field Name     Type  Length  Decimals  Description                        Usage
+-----------    ----  ------  --------  -----------                        -----
+ZZPRIORITY     NUMC  1       0         Customer Priority Level            Values: 1-5 (1=Highest)
+ZZREFERRAL     CHAR  20      0         Referral Source Code               E.g., 'GOOGLE', 'PARTNER_XYZ'
+ZZREGION       CHAR  10      0         Sales Region Code                  E.g., 'NORTH', 'SOUTH', 'INTL'
+ZZLEADSOURCE   CHAR  30      0         Lead Source Description            Free text field
+ZZPROMO        CHAR  15      0         Promotion Code Applied             E.g., 'SUMMER2024', 'NEWCUST10'
+ZZCONTACT      CHAR  40      0         Primary Contact Name               Customer contact person
+ZZEMAIL        CHAR  50      0         Customer Email Address             For quote confirmations
+ZZPHONE        CHAR  20      0         Customer Phone Number              Contact number
+ZZPAYTERMS     CHAR  10      0         Custom Payment Terms               Override standard terms
+ZZAPPROVER     CHAR  12      0         Approval Required By               User ID if approval needed
+
+
+Table: VBAP (Sales Document Item)
+----------------------------------
+
+Field Name     Type  Length  Decimals  Description                        Usage
+-----------    ----  ------  --------  -----------                        -----
+ZZWARRANTY     NUMC  2       0         Warranty Period in Months          E.g., 12, 24, 36
+ZZPROMO        CHAR  10      0         Item-Level Promotion Code          Can differ from header promo
+ZZINSTALL      CHAR  1       0         Installation Required              'X' = Yes, blank = No
+ZZGIFTBOX      CHAR  1       0         Gift Box Required                  'X' = Yes, blank = No
+ZZURGENT       CHAR  1       0         Urgent Delivery Flag               'X' = Expedite shipping
+ZZLEADTIME     NUMC  3       0         Custom Lead Time (Days)            Override standard lead time
+ZZVENDOR       CHAR  10      0         Preferred Vendor Code              For drop-ship items
+ZZSERIAL       CHAR  20      0         Serial Number Tracking             Track specific item serial
+ZZCONFIG       CHAR  50      0         Product Configuration Code         For configurable products
+ZZMAINTAIN     CHAR  1       0         Maintenance Contract Required      'X' = Yes
+
+
+Table: KNA1 (Customer Master)
+------------------------------
+
+Field Name     Type  Length  Decimals  Description                        Usage
+-----------    ----  ------  --------  -----------                        -----
+ZZTIER         CHAR  2       0         Customer Tier                      'VIP', 'STD', 'NEW'
+ZZDISCOUNT     DEC   5       2         Standard Discount Percentage       E.g., 10.50
+ZZMANAGER      CHAR  40      0         Account Manager Name               Sales rep name
+ZZLIMIT        CURR  15      2         Credit Limit Override              Custom credit limit
+ZZRATING       CHAR  3       0         Customer Rating                    'A+', 'A', 'B', 'C'
+
+
+Custom Z Tables
+---------------
+
+ZQUOTE_LOG - Quote Activity Log
+  MANDT       CLNT  3   Client
+  QUOTEID     CHAR  10  Quote Number
+  ACTIVITY    CHAR  30  Activity Type
+  TIMESTAMP   TIMS  6   Timestamp
+  USERNAME    CHAR  12  User Name
+  NOTES       CHAR  255 Activity Notes
+
+ZQUOTE_APPROVAL - Quote Approval Workflow
+  MANDT       CLNT  3   Client
+  QUOTEID     CHAR  10  Quote Number
+  APPROVER    CHAR  12  Approver User ID
+  STATUS      CHAR  1   Status (P=Pending, A=Approved, R=Rejected)
+  APPROVED_DT DATS  8   Approval Date
+  COMMENTS    CHAR  255 Approval Comments
+
+
+Business Logic Notes
+--------------------
+
+1. ZZPRIORITY determines automatic discount application:
+   - Priority 1: 15% discount
+   - Priority 2: 10% discount
+   - Priority 3: 5% discount
+   - Priority 4-5: No automatic discount
+
+2. ZZREFERRAL tracks lead source for marketing analytics
+
+3. ZZREGION used for territory-based commission calculations
+
+4. ZZPROMO (header and item level) can be combined:
+   - Header promo applies to entire quote
+   - Item promo can override for specific items
+
+5. ZZAPPROVER triggers workflow:
+   - If populated, quote requires approval before conversion
+   - Entry created in ZQUOTE_APPROVAL table
+   - Email notification sent to approver
+
+6. ZZWARRANTY affects pricing:
+   - Standard warranty: 12 months (no charge)
+   - Extended warranty: 24/36 months (additional cost)
+
+7. Custom Z tables enable:
+   - Full audit trail of quote modifications
+   - Multi-level approval workflow
+   - Reporting and analytics

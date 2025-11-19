@@ -1,0 +1,43 @@
+Table: VBAK
+Sales Document: Header Data
+
+Field         Data Type  Length  Description
+* MANDT       CLNT       3       Client
+* VBELN       CHAR       10      Sales Document
+ERDAT         DATS       8       Date on Which Record Was Created
+ERZET         TIMS       6       Entry Time
+ERNAM         CHAR       12      Name of Person who Created the Object
+ANGDT         DATS       8       Quotation is Valid From
+BNDDT         DATS       8       Quotation is Valid To
+AUDAT         DATS       8       Document Date (Date Received/Sent)
+VBTYP         CHAR       1       SD Document Category
+TRVOG         NUMC       1       Transaction Group
+AUART         CHAR       4       Sales Document Type
+AUGRU         CHAR       3       Order Reason (Reason for the Business Transaction)
+GWLDT         DATS       8       Guaranteed Date
+SUBMI         CHAR       10      Collective Number
+LIFSK         CHAR       2       Delivery Block (Document Header)
+FAKSK         CHAR       2       Billing Block in SD Document
+NETWR         CURR       15,2    Net Value of the Sales Order in Document Currency
+WAERK         CUKY       5       SD Document Currency
+VKORG         CHAR       4       Sales Organization
+VTWEG         CHAR       2       Distribution Channel
+SPART         CHAR       2       Division
+KUNNR         CHAR       10      Sold-To Party
+VKGRP         CHAR       3       Sales Group
+VKBUR         CHAR       4       Sales Office
+GSBER         CHAR       4       Business Area
+PRSDT         DATS       8       Date for Pricing and Exchange Rate
+GUEBG         DATS       8       Valid-From Date
+GUEEN         DATS       8       Valid-To Date
+BSTNK         CHAR       35      Customer Purchase Order Number
+BSTDK         DATS       8       Customer Purchase Order Date
+AUTLF         CHAR       1       Complete Delivery Defined for Each Sales Order
+VBELN_OLD     CHAR       10      Document Number of Reference Document
+
+Custom Fields:
+ZZPRIORITY    NUMC       1       Customer Priority Level (1=Highest, 5=Lowest)
+ZZREFERRAL    CHAR       20      Referral Source Code
+ZZREGION      CHAR       10      Sales Region Code
+ZZLEADSOURCE  CHAR       30      Lead Source Description
+ZZPROMO       CHAR       15      Promotion Code Applied

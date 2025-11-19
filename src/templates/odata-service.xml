@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0"
+           xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx"
+           xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+           xmlns:sap="http://www.sap.com/Protocols/SAPData">
+  <edmx:DataServices m:DataServiceVersion="2.0">
+    <Schema Namespace="Z_{{CUSTOMER}}_QUOTE_SRV"
+            xmlns="http://schemas.microsoft.com/ado/2008/09/edm"
+            xmlns:sap="http://www.sap.com/Protocols/SAPData">
+
+      <!-- Quote Entity Type -->
+      <EntityType Name="Quote">
+        <Key>
+          <PropertyRef Name="QuoteNumber"/>
+        </Key>
+
+        <!-- Standard Fields -->
+        <Property Name="QuoteNumber" Type="Edm.String" Nullable="false" MaxLength="10"
+                  sap:label="Quote Number" sap:creatable="false" sap:updatable="false"/>
+        <Property Name="CustomerId" Type="Edm.String" Nullable="false" MaxLength="10"
+                  sap:label="Customer ID" sap:required="true"/>
+        <Property Name="QuoteDate" Type="Edm.DateTime" Nullable="false"
+                  sap:label="Quote Date" sap:required="true"/>
+        <Property Name="ValidFrom" Type="Edm.DateTime" Nullable="false"
+                  sap:label="Valid From"/>
+        <Property Name="ValidUntil" Type="Edm.DateTime" Nullable="false"
+                  sap:label="Valid Until" sap:required="true"/>
+        <Property Name="SalesOrg" Type="Edm.String" Nullable="false" MaxLength="4"
+                  sap:label="Sales Organization"/>
+        <Property Name="DistChannel" Type="Edm.String" Nullable="false" MaxLength="2"
+                  sap:label="Distribution Channel"/>
+        <Property Name="Division" Type="Edm.String" Nullable="false" MaxLength="2"
+                  sap:label="Division"/>
+        <Property Name="TotalAmount" Type="Edm.Decimal" Precision="15" Scale="2"
+                  sap:label="Total Amount" sap:creatable="false" sap:updatable="false"/>
+        <Property Name="Currency" Type="Edm.String" MaxLength="5"
+                  sap:label="Currency" sap:semantics="currency-code"/>
+        <Property Name="Status" Type="Edm.String" MaxLength="1"
+                  sap:label="Status" sap:creatable="false" sap:updatable="false"/>
+
+{{CUSTOM_PROPERTIES}}
+
+        <!-- Timestamps -->
+        <Property Name="CreatedAt" Type="Edm.DateTime" Nullable="true"
+                  sap:label="Created At" sap:creatable="false" sap:updatable="false"/>
+        <Property Name="CreatedBy" Type="Edm.String" MaxLength="12"
+                  sap:label="Created By" sap:creatable="false" sap:updatable="false"/>
+        <Property Name="ChangedAt" Type="Edm.DateTime" Nullable="true"
+                  sap:label="Changed At" sap:creatable="false" sap:updatable="false"/>
+        <Property Name="ChangedBy" Type="Edm.String" MaxLength="12"
+                  sap:label="Changed By" sap:creatable="false" sap:updatable="false"/>
+
+        <!-- Navigation Properties (optional) -->
+        <!-- <NavigationProperty Name="Items" Relationship="Z_{{CUSTOMER}}_QUOTE_SRV.QuoteItems"
+                               FromRole="QuoteHeader" ToRole="QuoteItem"/> -->
+      </EntityType>
+
+      <!-- Quote Item Entity Type (optional - for line items) -->
+      <!--
+      <EntityType Name="QuoteItem">
+        <Key>
+          <PropertyRef Name="QuoteNumber"/>
+          <PropertyRef Name="ItemNumber"/>
+        </Key>
+        <Property Name="QuoteNumber" Type="Edm.String" Nullable="false" MaxLength="10"/>
+        <Property Name="ItemNumber" Type="Edm.String" Nullable="false" MaxLength="6"/>
+        <Property Name="MaterialNumber" Type="Edm.String" MaxLength="40"/>
+        <Property Name="Quantity" Type="Edm.Decimal" Precision="13" Scale="3"/>
+        <Property Name="Unit" Type="Edm.String" MaxLength="3"/>
+        <Property Name="NetPrice" Type="Edm.Decimal" Precision="15" Scale="2"/>
+        <Property Name="Currency" Type="Edm.String" MaxLength="5"/>
+      </EntityType>
+      -->
+
+      <!-- Associations (if using navigation) -->
+      <!--
+      <Association Name="QuoteItems">
+        <End Type="Z_{{CUSTOMER}}_QUOTE_SRV.Quote" Multiplicity="1" Role="QuoteHeader"/>
+        <End Type="Z_{{CUSTOMER}}_QUOTE_SRV.QuoteItem" Multiplicity="*" Role="QuoteItem"/>
+      </Association>
+      -->
+
+      <!-- Entity Container -->
+      <EntityContainer Name="Z_{{CUSTOMER}}_QUOTE_SRV_Entities"
+                       m:IsDefaultEntityContainer="true"
+                       sap:supported-formats="atom json">
+
+        <EntitySet Name="QuoteSet" EntityType="Z_{{CUSTOMER}}_QUOTE_SRV.Quote"
+                   sap:creatable="true" sap:updatable="false" sap:deletable="false"
+                   sap:pageable="true" sap:addressable="true"
+                   sap:content-version="1"/>
+
+        <!--
+        <EntitySet Name="QuoteItemSet" EntityType="Z_{{CUSTOMER}}_QUOTE_SRV.QuoteItem"
+                   sap:creatable="true" sap:updatable="true" sap:deletable="true"/>
+        -->
+
+        <!-- Association Sets -->
+        <!--
+        <AssociationSet Name="QuoteItemsSet" Association="Z_{{CUSTOMER}}_QUOTE_SRV.QuoteItems">
+          <End EntitySet="QuoteSet" Role="QuoteHeader"/>
+          <End EntitySet="QuoteItemSet" Role="QuoteItem"/>
+        </AssociationSet>
+        -->
+
+      </EntityContainer>
+
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

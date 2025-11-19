@@ -1,0 +1,50 @@
+Table: VBAP
+Sales Document: Item Data
+
+Field         Data Type  Length  Description
+* MANDT       CLNT       3       Client
+* VBELN       CHAR       10      Sales Document
+* POSNR       NUMC       6       Sales Document Item
+MATNR         CHAR       18      Material Number
+MATWA         CHAR       18      Material Entered
+PMATN         CHAR       18      Priced Reference Material
+CHARG         CHAR       10      Batch Number
+MATKL         CHAR       9       Material Group
+ARKTX         CHAR       40      Short Text for Sales Order Item
+PSTYV         CHAR       4       Sales Document Item Category
+POSAR         CHAR       1       Item Type
+LFREL         CHAR       1       Item Relevant for Delivery
+FKREL         CHAR       1       Relevant for Billing
+UEPOS         NUMC       6       Higher-Level Item in Bill of Material Structures
+GRPOS         NUMC       6       Alternative to Item
+ABGRU         CHAR       2       Reason for Rejection of Sales Documents
+PRODH         CHAR       18      Product Hierarchy
+ZWERT         CURR       13,2    Target Value for Outline Agreement in Document Currency
+ZMENG         QUAN       13,3    Target Quantity in Sales Units
+ZIEME         UNIT       3       Target Quantity Unit of Measure
+UMZIZ         DEC        5       Numerator for Conversion of Sales Qty into SKU
+UMZIN         DEC        5       Denominator for Conversion of Sales Qty into SKU
+MEINS         UNIT       3       Base Unit of Measure
+SMENG         QUAN       13,3    Scale Quantity in Base Unit of Measure
+ABLFZ         DEC        5,1     Rounding Quantity for Delivery
+ANTLF         CHAR       1       Maximum Number of Partial Deliveries Allowed Per Item
+KZTLF         CHAR       1       Partial Delivery at Item Level
+CHSPL         CHAR       1       Batch Split Allowed
+KWMENG        QUAN       15,3    Cumulative Order Quantity in Sales Units
+LSMENG        QUAN       15,3    Required Quantity in Delivery in Base Unit
+KBMENG        QUAN       15,3    Cumulative Confirmed Quantity in Sales Unit
+KLMENG        QUAN       15,3    Cumulative Confirmed Quantity in Base Unit of Measure
+VRKME         UNIT       3       Sales Unit
+UMVKZ         DEC        5       Numerator for Conversion of Sales Qty into Base Unit
+UMVKN         DEC        5       Denominator for Conv. of Sales Qty into Base Unit
+NETWR         CURR       15,2    Net Value of the Order Item in Document Currency
+WAERK         CUKY       5       SD Document Currency
+KPEIN         DEC        5       Pricing Unit
+KMEIN         UNIT       3       Unit of Measure for Pricing Unit
+
+Custom Fields:
+ZZWARRANTY    NUMC       2       Warranty Period in Months
+ZZPROMO       CHAR       10      Item-Level Promotion Code
+ZZINSTALL     CHAR       1       Installation Required (X=Yes, Blank=No)
+ZZGIFTBOX     CHAR       1       Gift Box Required (X=Yes, Blank=No)
+ZZURGENT      CHAR       1       Urgent Delivery Flag

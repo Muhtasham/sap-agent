@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Endpoint Generator - Pilot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .api-docs-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .api-docs-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 6px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .file-upload:hover {
+            background-color: #f8f9ff;
+        }
+
+        .file-upload.dragover {
+            background-color: #f0f2ff;
+            border-color: #4c5fd5;
+        }
+
+        .file-list {
+            margin-top: 12px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .file-item button {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .result h3 {
+            color: #2f855a;
+            margin-bottom: 12px;
+        }
+
+        .result-details {
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 12px;
+        }
+
+        .result-details pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .error {
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 24px;
+            color: #c53030;
+        }
+
+        .session-info {
+            background: #e6f7ff;
+            border: 2px solid #1890ff;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+
+        .session-info h4 {
+            color: #096dd9;
+            margin-bottom: 8px;
+        }
+
+        .session-id {
+            font-family: monospace;
+            background: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .progress-container {
+            background: #f7fafc;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .progress-header h3 {
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .progress-event {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #cbd5e0;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-event.init {
+            border-left-color: #667eea;
+        }
+
+        .progress-event.agent {
+            border-left-color: #48bb78;
+        }
+
+        .progress-event.tool {
+            border-left-color: #ed8936;
+        }
+
+        .progress-event.file {
+            border-left-color: #4299e1;
+        }
+
+        .progress-event.complete {
+            border-left-color: #38b2ac;
+        }
+
+        .progress-event.error {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .progress-icon {
+            margin-right: 12px;
+            font-size: 20px;
+        }
+
+        .progress-content {
+            flex: 1;
+        }
+
+        .progress-message {
+            font-size: 14px;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+
+        .progress-meta {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .cancel-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .cancel-btn:hover {
+            background: #f56565;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/api-docs" target="_blank" class="api-docs-link">📚 API Docs</a>
+            <h1>🚀 SAP Endpoint Generator</h1>
+            <p>AI-Powered ABAP Code Generation for OData Services</p>
+        </div>
+
+        <div class="content">
+            <form id="generatorForm">
+                <div class="form-group">
+                    <label for="customerName">Customer Name*</label>
+                    <input
+                        type="text"
+                        id="customerName"
+                        placeholder="acme-corp"
+                        pattern="[a-z0-9_-]+"
+                        required
+                        title="Lowercase letters, numbers, hyphens, and underscores only"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="sapVersion">SAP Version*</label>
+                    <select id="sapVersion" required>
+                        <option value="">Select version...</option>
+                        <option value="R3">R/3</option>
+                        <option value="ECC6">ECC6</option>
+                        <option value="S4HANA">S/4HANA</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>SAP Configuration Files*</label>
+                    <div class="file-upload" id="fileUpload">
+                        <p>📁 Drag and drop your SAP config files here</p>
+                        <p style="font-size: 12px; color: #999; margin-top: 8px;">or click to browse</p>
+                        <input type="file" id="fileInput" multiple accept=".txt,.csv" style="display: none;" />
+                    </div>
+                    <div class="file-list" id="fileList"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="quoteFields">Required Quote Fields (comma-separated)*</label>
+                    <input
+                        type="text"
+                        id="quoteFields"
+                        placeholder="customer_id, quote_date, valid_until, total_amount, currency"
+                        required
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="customFields">Custom Fields (JSON)</label>
+                    <textarea
+                        id="customFields"
+                        placeholder='{"ZZPRIORITY": "Priority level", "ZZREFERRAL": "Referral source"}'
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="specialLogic">Special Business Logic</label>
+                    <textarea
+                        id="specialLogic"
+                        placeholder="Apply 10% discount for VIP customers"
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="resumeSession">Resume Session ID (optional)</label>
+                    <input
+                        type="text"
+                        id="resumeSession"
+                        placeholder="Paste session ID to resume previous generation"
+                    />
+                </div>
+
+                <button type="submit" class="btn" id="generateBtn">
+                    Generate SAP Endpoint
+                </button>
+            </form>
+
+            <div id="progress" style="display: none;" class="progress-container">
+                <div class="progress-header">
+                    <h3>⚡ Real-time Progress</h3>
+                    <button id="cancelBtn" class="cancel-btn" style="display: none;">Cancel</button>
+                </div>
+                <div id="progressEvents"></div>
+            </div>
+
+            <div id="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // API endpoint (default to localhost, replace with your deployed URL)
+        const API_BASE = window.location.origin;
+        const STREAM_ENDPOINT = `${API_BASE}/api/generate/stream`;
+
+        const files = {};
+        const fileUpload = document.getElementById('fileUpload');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const form = document.getElementById('generatorForm');
+
+        let eventSource = null;
+
+        // File upload handling
+        fileUpload.addEventListener('click', () => fileInput.click());
+
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            await handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            await handleFiles(e.target.files);
+        });
+
+        async function handleFiles(fileList) {
+            for (const file of fileList) {
+                const content = await file.text();
+                files[file.name] = content;
+            }
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const html = Object.keys(files).map(name => `
+                <div class="file-item">
+                    <span>${name}</span>
+                    <button type="button" onclick="removeFile('${name}')">Remove</button>
+                </div>
+            `).join('');
+            document.getElementById('fileList').innerHTML = html;
+        }
+
+        function removeFile(name) {
+            delete files[name];
+            updateFileList();
+        }
+
+        // Get icon for event type
+        function getEventIcon(type) {
+            const icons = {
+                init: '🚀',
+                progress: '⚙️',
+                agent: '🤖',
+                tool: '🔧',
+                file: '📄',
+                complete: '✅',
+                error: '❌'
+            };
+            return icons[type] || '•';
+        }
+
+        // Add progress event to UI
+        function addProgressEvent(event) {
+            const eventsContainer = document.getElementById('progressEvents');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = `progress-event ${event.type}`;
+
+            let metaText = '';
+            if (event.agent) {
+                metaText = `Agent: ${event.agent}`;
+            } else if (event.tool) {
+                metaText = `Tool: ${event.tool}`;
+            } else if (event.file) {
+                metaText = `File: ${event.file}`;
+            } else if (event.sessionId) {
+                metaText = `Session: ${event.sessionId}`;
+            }
+
+            eventDiv.innerHTML = `
+                <div class="progress-icon">${getEventIcon(event.type)}</div>
+                <div class="progress-content">
+                    <div class="progress-message">${event.message}</div>
+                    ${metaText ? `<div class="progress-meta">${metaText}</div>` : ''}
+                </div>
+            `;
+
+            eventsContainer.appendChild(eventDiv);
+            eventsContainer.scrollTop = eventsContainer.scrollHeight;
+        }
+
+        // Form submission with streaming
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (Object.keys(files).length === 0) {
+                alert('Please upload at least one SAP configuration file');
+                return;
+            }
+
+            const customerName = document.getElementById('customerName').value;
+            const sapVersion = document.getElementById('sapVersion').value;
+            const quoteFields = document.getElementById('quoteFields').value
+                .split(',')
+                .map(f => f.trim())
+                .filter(f => f);
+
+            let customFields = null;
+            const customFieldsInput = document.getElementById('customFields').value;
+            if (customFieldsInput) {
+                try {
+                    customFields = JSON.parse(customFieldsInput);
+                } catch (e) {
+                    alert('Invalid JSON in custom fields');
+                    return;
+                }
+            }
+
+            const specialLogic = document.getElementById('specialLogic').value || null;
+            const resumeSession = document.getElementById('resumeSession').value || null;
+
+            // Show progress container
+            document.getElementById('generatorForm').style.display = 'none';
+            document.getElementById('progress').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('progressEvents').innerHTML = '';
+
+            try {
+                // Use fetch with ReadableStream for SSE
+                const response = await fetch(STREAM_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customer_name: customerName,
+                        sap_version: sapVersion,
+                        config_files: files,
+                        quote_fields: quoteFields,
+                        custom_fields: customFields,
+                        special_logic: specialLogic,
+                        resume_session_id: resumeSession,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Generation failed');
+                }
+
+                // Read SSE stream
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const event = JSON.parse(line.substring(6));
+                                addProgressEvent(event);
+
+                                // Handle completion
+                                if (event.type === 'complete') {
+                                    setTimeout(() => {
+                                        showResult(event);
+                                    }, 500);
+                                } else if (event.type === 'error') {
+                                    setTimeout(() => {
+                                        showError(event.message);
+                                    }, 500);
+                                }
+                            } catch (e) {
+                                console.error('Failed to parse SSE message:', line, e);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+
+        function showResult(event) {
+            document.getElementById('progress').style.display = 'none';
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+
+            const data = event.data || {};
+            const files = data.files || [];
+
+            resultDiv.innerHTML = `
+                <h3>✅ Generation Complete!</h3>
+                <p>Successfully generated ${files.length} files for ${data.customer}</p>
+
+                ${event.sessionId ? `
+                    <div class="session-info">
+                        <h4>📋 Session ID</h4>
+                        <div class="session-id">${event.sessionId}</div>
+                        <p style="font-size: 12px; margin-top: 8px; color: #555;">
+                            Save this ID to resume or fork this generation later
+                        </p>
+                    </div>
+                ` : ''}
+
+                <div class="result-details">
+                    <strong>Generated Files:</strong>
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        ${files.map(f => `<li>${f}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <p style="margin-top: 16px; font-size: 14px; color: #666;">
+                    <a href="/api/download/${data.customer}" style="color: #667eea; text-decoration: none;">
+                        Download generated code →
+                    </a>
+                </p>
+
+                <button onclick="resetForm()" class="btn" style="margin-top: 16px; background: #4299e1;">
+                    Generate Another Endpoint
+                </button>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('progress').style.display = 'none';
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'error';
+            resultDiv.innerHTML = `
+                <h3>❌ Error</h3>
+                <p>${message}</p>
+                <p style="font-size: 12px; margin-top: 12px;">
+                    Please check your inputs and try again. Contact support if the problem persists.
+                </p>
+                <button onclick="resetForm()" class="btn" style="margin-top: 16px; background: #fc8181;">
+                    Try Again
+                </button>
+            `;
+        }
+
+        function resetForm() {
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('progress').style.display = 'none';
+            document.getElementById('generatorForm').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "name": "@sap-agent/endpoint-generator",
+  "version": "1.0.1",
+  "description": "AI-powered SAP ABAP code generator for OData endpoints using Claude Agent SDK",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "generate": "node dist/cli.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=cli-integration --maxWorkers=2 --runInBand=false",
+    "test:integration:serial": "jest --testPathPattern=cli-integration --runInBand",
+    "test:integration:fast": "jest tests/cli-integration/error-handling.test.ts",
+    "test:integration:parallel": "jest --testPathPattern=cli-integration --maxWorkers=3",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts",
+    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts --fix",
+    "clean": "rm -rf dist",
+    "example:basic": "ts-node examples/basic-usage.ts",
+    "example:advanced": "ts-node examples/advanced-usage.ts",
+    "example:programmatic": "ts-node examples/programmatic-usage.ts",
+    "serve": "npm run build && node dist/api-server.js",
+    "modal:example": "ts-node examples/modal-sandbox.ts",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
+  },
+  "bin": {
+    "sap-generate": "./dist/cli.js"
+  },
+  "keywords": [
+    "sap",
+    "abap",
+    "odata",
+    "code-generation",
+    "ai",
+    "claude",
+    "agent-sdk"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@types/express": "^5.0.5",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "chalk": "^4.1.2",
+    "commander": "^12.0.0",
+    "express": "^5.1.0",
+    "modal": "^0.5.4",
+    "ora": "^5.4.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
