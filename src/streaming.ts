@@ -30,7 +30,11 @@ export interface ProgressUpdate {
 /**
  * Build the main prompt for the orchestrator agent
  */
-function buildMainPrompt(request: GenerateEndpointRequest, outputDir: string): string {
+function buildMainPrompt(
+  request: GenerateEndpointRequest,
+  outputDir: string,
+  safeCustomerName: string
+): string {
   const customFieldsDesc = request.requirements.customFields
     ? Object.entries(request.requirements.customFields)
         .map(([field, desc]) => `  - ${field}: ${desc}`)
@@ -38,7 +42,7 @@ function buildMainPrompt(request: GenerateEndpointRequest, outputDir: string): s
     : '  (None specified)';
 
   return `
-Generate a complete SAP quote creation endpoint for ${request.customerName.toUpperCase()}.
+Generate a complete SAP quote creation endpoint for ${safeCustomerName.toUpperCase()}.
 
 SAP VERSION: ${request.sapVersion}
 
@@ -58,14 +62,14 @@ ${request.requirements.specialLogic || '(None specified)'}
 
 DELIVERABLES:
 
-Please generate the following files and save them to ${outputDir}/${request.customerName}/:
+Please generate the following files and save them to ${outputDir}/${safeCustomerName}/:
 
-1. Function Module: Z_CREATE_QUOTE_${request.customerName.toUpperCase()}.abap
-2. OData Service: Z${request.customerName.toUpperCase()}_QUOTE_SRV.xml
-3. DPC Class: ZCL_${request.customerName.toUpperCase()}_QUOTE_DPC_EXT.abap
-4. MPC Class: ZCL_${request.customerName.toUpperCase()}_QUOTE_MPC_EXT.abap
+1. Function Module: Z_CREATE_QUOTE_${safeCustomerName.toUpperCase()}.abap
+2. OData Service: Z${safeCustomerName.toUpperCase()}_QUOTE_SRV.xml
+3. DPC Class: ZCL_${safeCustomerName.toUpperCase()}_QUOTE_DPC_EXT.abap
+4. MPC Class: ZCL_${safeCustomerName.toUpperCase()}_QUOTE_MPC_EXT.abap
 5. Deployment Guide: DEPLOYMENT_GUIDE.md
-6. Tests: tests/Z_CREATE_QUOTE_${request.customerName.toUpperCase()}_TEST.abap
+6. Tests: tests/Z_CREATE_QUOTE_${safeCustomerName.toUpperCase()}_TEST.abap
 
 Follow SAP best practices and make all code production-ready.
 `;
@@ -78,7 +82,14 @@ export async function* generateQuoteEndpointStreaming(
   request: GenerateEndpointRequest
 ): AsyncGenerator<ProgressUpdate> {
   const outputDir = request.outputDir || './output';
-  const customerDir = path.join(outputDir, request.customerName);
+
+  // Sanitize customer name to prevent path traversal attacks
+  const safeCustomerName = path.basename(request.customerName);
+  if (safeCustomerName !== request.customerName || /[\/\\]/.test(request.customerName)) {
+    throw new Error(`Invalid customer name: ${request.customerName} (path traversal attempt detected)`);
+  }
+
+  const customerDir = path.join(outputDir, safeCustomerName);
   const sapMcpServer = createSapMcpServer();
   const allowedTools = [
     'Read',
@@ -98,11 +109,11 @@ export async function* generateQuoteEndpointStreaming(
 
   yield {
     type: 'init',
-    message: `Starting SAP endpoint generation for ${request.customerName}`,
+    message: `Starting SAP endpoint generation for ${safeCustomerName}`,
   };
 
   // Build the main prompt
-  const prompt = buildMainPrompt(request, outputDir);
+  const prompt = buildMainPrompt(request, outputDir, safeCustomerName);
 
   // Create streaming input generator
   // Note: SDK expects full SDKUserMessage objects in streaming mode
@@ -339,7 +350,7 @@ All code must be production-ready and follow SAP best practices.
       sessionId,
       data: {
         files,
-        customer: request.customerName,
+        customer: safeCustomerName,
       },
     };
   } catch (error: any) {

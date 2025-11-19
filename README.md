@@ -151,6 +151,8 @@ ZZWARRANTY     NUMC  2       Warranty Period (Months)
 
 ## Architecture
 
+📘 **See [ARCHITECTURE.md](ARCHITECTURE.md) for comprehensive diagrams and detailed architecture documentation.**
+
 ### Agent-Based Generation
 
 The SAP Endpoint Generator uses a multi-agent architecture powered by Claude Agent SDK with specialized subagents:
@@ -409,11 +411,16 @@ npm run lint
 npm run lint:fix  # Auto-fix issues
 ```
 
-**Current Test Coverage** (104 tests, all passing):
+**Current Test Coverage** (114 tests, all passing):
 - ✅ Statements: 88%
 - ✅ Branches: 79%
 - ✅ Functions: 82%
 - ✅ Lines: 88%
+
+**Test Breakdown:**
+- Unit Tests: 104 tests (<2 seconds)
+- CLI Integration Tests: 10 tests (~2 hours with real API calls)
+  - See [tests/cli-integration/README.md](tests/cli-integration/README.md) for details
 
 ### Building
 

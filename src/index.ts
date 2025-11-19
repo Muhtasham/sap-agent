@@ -24,7 +24,14 @@ export async function generateQuoteEndpoint(
   request: GenerateEndpointRequest
 ): Promise<{ messages: any[]; result: any; sessionId?: string }> {
   const outputDir = request.outputDir || './output';
-  const customerDir = path.join(outputDir, request.customerName);
+
+  // Sanitize customer name to prevent path traversal attacks
+  const safeCustomerName = path.basename(request.customerName);
+  if (safeCustomerName !== request.customerName || /[\/\\]/.test(request.customerName)) {
+    throw new Error(`Invalid customer name: ${request.customerName} (path traversal attempt detected)`);
+  }
+
+  const customerDir = path.join(outputDir, safeCustomerName);
   const sapMcpServer = createSapMcpServer();
   const allowedTools = [
     'Read',
@@ -43,7 +50,7 @@ export async function generateQuoteEndpoint(
   }
 
   // Build the main prompt
-  const prompt = buildMainPrompt(request, outputDir);
+  const prompt = buildMainPrompt(request, outputDir, safeCustomerName);
 
   // Streaming input per SDK guidance for richer interactions
   async function* generateMessages() {
@@ -68,7 +75,7 @@ export async function generateQuoteEndpoint(
 ║     SAP Endpoint Generator - Powered by Claude Agent SDK      ║
 ╚════════════════════════════════════════════════════════════════╝
 
-Customer: ${request.customerName}
+Customer: ${safeCustomerName}
 SAP Version: ${request.sapVersion}
 Output Directory: ${customerDir}
 
@@ -205,7 +212,11 @@ For support or issues, please contact the development team.
 /**
  * Build the main prompt for the orchestrator agent
  */
-function buildMainPrompt(request: GenerateEndpointRequest, outputDir: string): string {
+function buildMainPrompt(
+  request: GenerateEndpointRequest,
+  outputDir: string,
+  safeCustomerName: string
+): string {
   const customFieldsDesc = request.requirements.customFields
     ? Object.entries(request.requirements.customFields)
         .map(([field, desc]) => `  - ${field}: ${desc}`)
@@ -213,7 +224,7 @@ function buildMainPrompt(request: GenerateEndpointRequest, outputDir: string): s
     : '  (None specified)';
 
   return `
-Generate a complete SAP quote creation endpoint for ${request.customerName.toUpperCase()}.
+Generate a complete SAP quote creation endpoint for ${safeCustomerName.toUpperCase()}.
 
 SAP VERSION: ${request.sapVersion}
 
@@ -233,16 +244,16 @@ ${request.requirements.specialLogic || '(None specified)'}
 
 DELIVERABLES:
 
-Please generate the following files and save them to ${outputDir}/${request.customerName}/:
+Please generate the following files and save them to ${outputDir}/${safeCustomerName}/:
 
 1. analysis.json - Complete SAP system analysis
-2. Z_CREATE_QUOTE_${request.customerName.toUpperCase()}.abap - Function module
-3. Z${request.customerName.toUpperCase()}_QUOTE_SRV.xml - OData service definition
-4. ZCL_${request.customerName.toUpperCase()}_QUOTE_DPC_EXT.abap - Data provider class
-5. ZCL_${request.customerName.toUpperCase()}_QUOTE_MPC_EXT.abap - Model provider class
-6. tests/Z_CREATE_QUOTE_${request.customerName.toUpperCase()}_TEST.abap - Unit tests
+2. Z_CREATE_QUOTE_${safeCustomerName.toUpperCase()}.abap - Function module
+3. Z${safeCustomerName.toUpperCase()}_QUOTE_SRV.xml - OData service definition
+4. ZCL_${safeCustomerName.toUpperCase()}_QUOTE_DPC_EXT.abap - Data provider class
+5. ZCL_${safeCustomerName.toUpperCase()}_QUOTE_MPC_EXT.abap - Model provider class
+6. tests/Z_CREATE_QUOTE_${safeCustomerName.toUpperCase()}_TEST.abap - Unit tests
 7. tests/integration_tests.md - Integration test scenarios
-8. tests/${request.customerName}_quote_api_tests.json - Postman collection
+8. tests/${safeCustomerName}_quote_api_tests.json - Postman collection
 9. DEPLOYMENT_GUIDE.md - Complete deployment guide
 
 PROCESS:
@@ -251,7 +262,7 @@ Step 1: ANALYZE SAP CONFIGURATION
 - Use the Task tool to delegate to the 'sap-context' agent
 - Task: "Analyze SAP configuration files and extract all customizations"
 - The agent should use the extract_sap_customizations and parse_sap_table tools
-- Save results to ${outputDir}/${request.customerName}/analysis.json
+- Save results to ${outputDir}/${safeCustomerName}/analysis.json
 
 Step 2: GENERATE ABAP CODE
 - Use the Task tool to delegate to the 'abap-generator' agent

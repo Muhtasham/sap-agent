@@ -37,4 +37,7 @@ module.exports = {
     '<rootDir>/node_modules/swagger-ui-express',
     '<rootDir>/node_modules/swagger-jsdoc',
   ],
+  // Default: no parallelization limit (runs all tests in parallel)
+  // For integration tests, override with --maxWorkers flag
+  maxWorkers: process.env.CI ? 2 : '50%',
 };

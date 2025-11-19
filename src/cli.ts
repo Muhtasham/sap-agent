@@ -9,12 +9,17 @@ import { GenerateEndpointRequest, SAPVersion } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Read version from package.json
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')
+);
+
 const program = new Command();
 
 program
   .name('sap-generate')
   .description('Generate SAP quote creation endpoints using AI')
-  .version('1.0.0');
+  .version(packageJson.version);
 
 program
   .command('quote')
