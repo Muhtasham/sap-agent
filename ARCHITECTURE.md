@@ -364,45 +364,69 @@ graph TB
 stateDiagram-v2
     [*] --> Initialization
 
-    Initialization --> Analysis: Start workflow
+    Initialization --> Analysis
 
     state Analysis {
         [*] --> ReadConfig
-        ReadConfig --> ExtractCustomizations: MCP: extract_sap_customizations
-        ExtractCustomizations --> ParseTables: MCP: parse_sap_table
-        ParseTables --> WriteAnalysis: Write analysis.json
+        ReadConfig --> ExtractCustomizations
+        ExtractCustomizations --> ParseTables
+        ParseTables --> WriteAnalysis
         WriteAnalysis --> [*]
+
+        note right of ExtractCustomizations
+            MCP: extract_sap_customizations
+        end note
+
+        note right of ParseTables
+            MCP: parse_sap_table
+        end note
     }
 
-    Analysis --> CodeGeneration: Analysis complete
-    Analysis --> Error: Config invalid
+    Analysis --> CodeGeneration
+    Analysis --> Error
 
     state CodeGeneration {
         [*] --> LoadTemplates
         LoadTemplates --> GenFunctionModule
-        GenFunctionModule --> ValidateFM: MCP: validate_abap_syntax
-        ValidateFM --> GenODataService: Valid
-        ValidateFM --> FixFM: Invalid
+        GenFunctionModule --> ValidateFM
+        ValidateFM --> GenODataService
+        ValidateFM --> FixFM
         FixFM --> ValidateFM
 
-        GenODataService --> ValidateOData: MCP: generate_odata_metadata
-        ValidateOData --> GenDPC: Valid
-        ValidateOData --> FixOData: Invalid
+        GenODataService --> ValidateOData
+        ValidateOData --> GenDPC
+        ValidateOData --> FixOData
         FixOData --> ValidateOData
 
-        GenDPC --> ValidateDPC: MCP: validate_abap_syntax
-        ValidateDPC --> GenMPC: Valid
-        ValidateDPC --> FixDPC: Invalid
+        GenDPC --> ValidateDPC
+        ValidateDPC --> GenMPC
+        ValidateDPC --> FixDPC
         FixDPC --> ValidateDPC
 
-        GenMPC --> ValidateMPC: MCP: validate_abap_syntax
-        ValidateMPC --> [*]: Valid
-        ValidateMPC --> FixMPC: Invalid
+        GenMPC --> ValidateMPC
+        ValidateMPC --> [*]
+        ValidateMPC --> FixMPC
         FixMPC --> ValidateMPC
+
+        note right of ValidateFM
+            MCP: validate_abap_syntax
+        end note
+
+        note right of ValidateOData
+            MCP: generate_odata_metadata
+        end note
+
+        note right of ValidateDPC
+            MCP: validate_abap_syntax
+        end note
+
+        note right of ValidateMPC
+            MCP: validate_abap_syntax
+        end note
     }
 
-    CodeGeneration --> TestGeneration: Code valid
-    CodeGeneration --> Error: Validation failed
+    CodeGeneration --> TestGeneration
+    CodeGeneration --> Error
 
     state TestGeneration {
         [*] --> ReadAnalysis
@@ -412,7 +436,7 @@ stateDiagram-v2
         GenAPITests --> [*]
     }
 
-    TestGeneration --> Documentation: Tests created
+    TestGeneration --> Documentation
 
     state Documentation {
         [*] --> ReadGeneratedFiles
@@ -420,10 +444,10 @@ stateDiagram-v2
         GenerateGuide --> [*]
     }
 
-    Documentation --> Complete: Guide written
+    Documentation --> Complete
     Complete --> [*]
 
-    Error --> [*]: Report error to user
+    Error --> [*]
 ```
 
 ## 8. Session Management & Resumption
@@ -515,22 +539,3 @@ graph LR
 - `analysis.json` is the contract between agents
 - Templates drive code generation
 - Generated files are inputs to downstream agents
-
-## Performance Characteristics
-
-### Typical Execution Times (from actual test run)
-- **Analysis Phase**: 2-5 minutes
-- **Code Generation**: 10-15 minutes
-- **Test Generation**: 5-10 minutes
-- **Documentation**: 3-5 minutes
-- **Total**: ~20-35 minutes per endpoint
-
-### Parallelization
-- Tests run in parallel (2 workers)
-- Each agent execution is sequential within workflow
-- MCP tool calls are synchronous
-
-### Cost Breakdown
-- **API costs**: ~$2-3 per generation
-- **Dominated by**: Code generation phase (largest context)
-- **Optimizations**: Template reuse, validation caching
