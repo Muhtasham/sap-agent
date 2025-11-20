@@ -291,7 +291,3 @@ Need help with the examples?
 - Check the [README](../README.md)
 - Read [GETTING_STARTED](../GETTING_STARTED.md)
 - Open an issue on GitHub
-
----
-
-Happy generating! 🚀

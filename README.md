@@ -2,17 +2,40 @@
 
 > AI-powered SAP ABAP code generator for OData endpoints using Claude Agent SDK
 
-Automatically generate production-ready SAP quote creation endpoints in minutes instead of days. Built with Claude's Agent SDK and powered by advanced AI for intelligent code generation.
+**Solve the REAL pain of ERP integrations:** Automatically generate production-ready ABAP code **inside your SAP system** in minutes instead of days. No more painful manual coding, transaction navigation hell, or consultant fees.
 
-## Features
+## TL;DR
 
-- **Intelligent Code Generation**: Automatically generates ABAP function modules, OData services, and supporting classes
-- **Customization-Aware**: Handles customer-specific fields, tables, and business logic
-- **Multi-Version Support**: Compatible with R/3, ECC 6.0, and S/4HANA
-- **Production-Ready**: Includes error handling, authorization checks, and transaction safety
-- **Complete Testing**: Generates ABAP unit tests, integration test scenarios, and API test collections
-- **Detailed Documentation**: Creates step-by-step deployment guides for SAP administrators
-- **Cost-Effective**: Generate endpoints for ~$2-3 in API costs
+**Problem:** ERP integrations fail because creating endpoints INSIDE SAP (ABAP code) is expensive, slow, and requires rare expertise.
+
+**Solution:** Auto-generate production-ready SAP endpoints in 5-15 minutes with:
+- Complete ABAP code (function modules, OData services, classes)
+- Comprehensive tests (ABAP Unit, integration scenarios, Postman)
+- Deployment guides with exact transaction codes (SE37, SEGW, SICF)
+- Support for custom fields, business logic, and multiple SAP versions
+
+## The Real Problem with ERP Integrations
+
+Most integration tools focus on **calling APIs and transforming data** - the easy 5% of the work.
+
+**The real pain (80% of effort) is creating the endpoints INSIDE legacy ERP systems:**
+- Writing ABAP code in SAP (painful, slow, requires rare expertise)
+- Navigating complex SAP transactions (SE37, SEGW, SICF, PFCG - "a big mess")
+- Handling customer-specific customizations (every customer is different)
+- Debugging in SAP (inconvenient, time-consuming)
+- Getting reliable, production-ready code
+
+**This generator solves that pain.** We auto-generate the SAP-side ABAP code, complete with exact transaction codes and deployment steps.
+
+## What the SAP-Agent can generate (The Hard 80%)
+
+**Inside your SAP system (the part that's actually hard):**
+- **ABAP Function Modules** with proper error handling, authorization checks, and transaction safety
+- **OData Service Definitions** (V2/V4) with complete metadata and annotations
+- **Data Provider Classes (DPC)** with CREATE/READ/UPDATE/DELETE operations
+- **Model Provider Classes (MPC)** with field constraints and business logic
+- **Complete Test Suites**: ABAP Unit tests (26+ methods), integration test scenarios, Postman collections
+- **Deployment Guides**: Exact SAP transaction codes (SE37, SEGW, SICF, PFCG) with step-by-step instructions
 
 ## Quick Start
 
@@ -411,17 +434,6 @@ npm run lint
 npm run lint:fix  # Auto-fix issues
 ```
 
-**Current Test Coverage** (114 tests, all passing):
-- ✅ Statements: 88%
-- ✅ Branches: 79%
-- ✅ Functions: 82%
-- ✅ Lines: 88%
-
-**Test Breakdown:**
-- Unit Tests: 104 tests (<2 seconds)
-- CLI Integration Tests: 10 tests (~2 hours with real API calls)
-  - See [tests/cli-integration/README.md](tests/cli-integration/README.md) for details
-
 ### Building
 
 ```bash
@@ -434,56 +446,6 @@ npm run build
 # Development mode
 npm run dev
 ```
-
-## Use Cases
-
-### 1. Quote Creation Endpoint (MVP)
-
-Generate a complete quote creation endpoint with:
-- Customer validation
-- Custom fields handling
-- Pricing logic
-- Authorization checks
-- Full audit trail
-
-**Time to deploy**: ~5 minutes (vs. 2-3 days manual)
-
-### 2. Order Management API
-
-Extend to create order creation and modification endpoints:
-- Create orders from quotes
-- Update order status
-- Handle line items
-- Integration with external systems
-
-### 3. Customer Self-Service Portal
-
-Enable customers to:
-- Create quotes online
-- Track quote status
-- Accept/reject quotes
-- View history
-
-## Business Value
-
-### Cost Savings
-
-- **Traditional Approach**: €3K-5K consultant fees, 3-5 days development
-- **With Generator**: €2-3 API costs, 5 minutes generation time
-- **ROI**: 1000x+ margin
-
-### Speed
-
-- Manual development: 3-5 days
-- With generator: 5 minutes
-- **60x-100x faster**
-
-### Quality
-
-- Consistent code quality
-- Best practices enforced
-- Comprehensive testing
-- Production-ready from day one
 
 ## Deployment
 
@@ -557,29 +519,6 @@ Ensure JSON is properly quoted:
 --custom-fields '{"FIELD":"Description"}'
 ```
 
-## Roadmap
-
-### Phase 1: MVP (Current)
-- [x] Quote creation endpoint generation
-- [x] Basic customization support
-- [x] ABAP validation
-- [x] Test generation
-- [x] Deployment guides
-
-### Phase 2: Enhancement
-- [ ] Order management endpoints
-- [ ] Item-level operations
-- [ ] Advanced pricing logic
-- [ ] Approval workflows
-- [ ] Integration with external systems
-
-### Phase 3: Platform
-- [ ] Web UI for code generation
-- [ ] Direct SAP system integration
-- [ ] Live validation against SAP
-- [ ] Automatic deployment
-- [ ] Monitoring and analytics
-
 ## Contributing
 
 Contributions are welcome! Please:
@@ -589,25 +528,3 @@ Contributions are welcome! Please:
 3. Make your changes
 4. Add tests
 5. Submit a pull request
-
-## License
-
-MIT
-
-## Support
-
-For issues, questions, or feature requests:
-
-- GitHub Issues: [Create an issue]
-- Email: support@example.com
-- Documentation: [Full docs]
-
-## Acknowledgments
-
-- Built with [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk)
-- Powered by Claude Sonnet 4.5
-- SAP expertise from years of consulting
-
----
-
-**Made with ❤️ using Claude Agent SDK**
