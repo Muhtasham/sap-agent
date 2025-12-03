@@ -65,6 +65,10 @@ npx sap-generate init
 # - example-command.sh
 ```
 
+Before running generation, gather your SAP context (table structures, custom fields, BAPIs) using `SAP_DATA_COLLECTION.md`. For quotation-heavy projects, see:
+- `SAP_QUOTATION_REFERENCE.md` (VA25 vs VA25N, VA22 notes, outputs/workflows, EXTENSIONIN mapping)
+- `SAP_QUOTATION_VALIDATION.md` (one-page workbook to audit your system setup)
+
 ### Generate Your First Endpoint
 
 ```bash
@@ -135,6 +139,12 @@ Options:
 ## Configuration Files
 
 The generator needs SAP configuration files to understand your system. These are typically exports from SAP transactions.
+
+### Collecting SAP context (R/3 and ECC6)
+- **Table structures:** SE37 -> run `DDIF_FIELDINFO_GET` with `TABNAME=VBAK` (and `VBAP`), then `System -> List -> Save -> Local File -> Spreadsheet` to `sap-config/VBAK_structure.txt`.
+- **Custom fields:** SE11 -> `Extras -> Append Structure -> Display`, copy all `ZZ*`/`YY*` fields into `sap-config/custom_fields.txt`.
+- **Optional BAPI:** SE37 -> display the BAPI (e.g., `BAPI_QUOTATION_CREATEFROMDATA2`), export the Import/Export/Tables parameters to a text file.
+- Full playbook with alternatives: `SAP_DATA_COLLECTION.md`. For quotation-specific notes (VA25 vs VA25N, VA22 usage, outputs/workflows), see `SAP_QUOTATION_REFERENCE.md`.
 
 ### VBAK Structure File
 

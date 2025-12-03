@@ -57,54 +57,37 @@ This creates:
 - `sap-config/` directory with example files
 - `example-command.sh` with a sample generation command
 
-## Step 3: Gather SAP Configuration
+## Step 3: Gather SAP Configuration (R/3 + ECC6)
 
-You need to export your SAP table structures and custom field definitions.
+You need table structures, custom/append fields, and (optionally) BAPI signatures or exits. For a full, step-by-step playbook see `SAP_DATA_COLLECTION.md`.
+For quotation-specific tips (VA25 vs VA25N, VA22 usage, outputs/workflows), see `SAP_QUOTATION_REFERENCE.md`. To validate your own system setup quickly, use `SAP_QUOTATION_VALIDATION.md` (checklist workbook).
 
-### Export Table Structure (SE11)
+### Minimum checklist
+- Table structures: header (`VBAK`) and items (`VBAP`) at a minimum
+- Custom/append fields: any `ZZ*`/`YY*` on those tables
+- Optional: BAPI/function module signatures and relevant exits/BAdIs
 
-1. Open transaction **SE11** in SAP
-2. Enter table name: **VBAK** (Sales Document Header)
-3. Click **Display**
-4. Go to **Utilities → Table Contents → Export**
-5. Save as `VBAK_structure.txt`
+### Fast export (works on R/3 and ECC6)
+1. Go to **SE37**, run function module `DDIF_FIELDINFO_GET`.
+2. Set `TABNAME = VBAK` (leave `FIELDNAME` blank), Execute (F8).
+3. In the results, choose `System → List → Save → Local File → Spreadsheet` and save as `sap-config/VBAK_structure.txt`.
+4. Repeat for `VBAP` and any additional tables.
 
-Alternatively, use this format:
+### Custom fields (append structures)
+1. In **SE11**, display the table.
+2. Choose `Extras → Append Structure → Display` to view Z/Y appends.
+3. Copy the fields to `custom_fields.txt` in this format:
+   ```
+   Table: VBAK
+   Field Name     Type  Length  Description
+   ZZPRIORITY     NUMC  1       Customer Priority (1-5)
+   ZZREFERRAL     CHAR  20      Referral Source
+   ```
 
-```
-Table: VBAK
-Sales Document Header Data
-
-Field         Data Type  Length  Description
-* MANDT       CLNT       3       Client
-* VBELN       CHAR       10      Sales Document
-ERDAT         DATS       8       Creation Date
-AUDAT         DATS       8       Document Date
-KUNNR         CHAR       10      Sold-to Party
-WAERK         CUKY       5       Currency
-NETWR         CURR       15,2    Net Value
-VKORG         CHAR       4       Sales Organization
-VTWEG         CHAR       2       Distribution Channel
-SPART         CHAR       2       Division
-```
-
-### Document Custom Fields
-
-Create `custom_fields.txt`:
-
-```
-Table: VBAK
-Custom Fields
-
-Field Name     Type  Length  Description
-ZZPRIORITY     NUMC  1       Customer Priority (1-5)
-ZZREFERRAL     CHAR  20      Referral Source
-ZZREGION       CHAR  10      Sales Region
-```
-
-### Optional: Export VBAP (Line Items)
-
-Repeat the process for **VBAP** if your quotes include line items.
+### Optional: BAPI signature
+If you rely on an existing BAPI (e.g., `BAPI_QUOTATION_CREATEFROMDATA2`):
+1. In **SE37**, display the BAPI and note Import/Export/Tables parameters.
+2. `System → List → Save → Local File` to `sap-config/BAPI_QUOTATION_CREATEFROMDATA2.txt`.
 
 ## Step 4: Generate Your First Endpoint
 
