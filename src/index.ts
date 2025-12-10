@@ -1,9 +1,12 @@
 /**
  * SAP Endpoint Generator - Main Entry Point
- * Generates SAP ABAP code for OData endpoints using Claude Agent SDK
+ * Generates SAP ABAP code for OData endpoints using Claude Agent SDK V2
  */
 
-import { query } from '@anthropic-ai/claude-agent-sdk';
+import {
+  unstable_v2_createSession,
+  unstable_v2_resumeSession,
+} from '@anthropic-ai/claude-agent-sdk';
 import { GenerateEndpointRequest } from './types';
 import { sapContextAgent } from './agents/context-analyzer';
 import { abapCodeGenerator } from './agents/code-generator';
@@ -52,27 +55,9 @@ export async function generateQuoteEndpoint(
   // Build the main prompt
   const prompt = buildMainPrompt(request, outputDir, safeCustomerName);
 
-  // Streaming input per SDK guidance for richer interactions
-  async function* generateMessages() {
-    yield {
-      type: 'user' as const,
-      session_id: request.resume ?? '',
-      message: {
-        role: 'user' as const,
-        content: [
-          {
-            type: 'text' as const,
-            text: prompt,
-          },
-        ],
-      },
-      parent_tool_use_id: null,
-    };
-  }
-
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗
-║     SAP Endpoint Generator - Powered by Claude Agent SDK      ║
+║     SAP Endpoint Generator - Powered by Claude Agent SDK V2    ║
 ╚════════════════════════════════════════════════════════════════╝
 
 Customer: ${safeCustomerName}
@@ -82,35 +67,34 @@ Output Directory: ${customerDir}
 Starting code generation...
 `);
 
-  const result = query({
-    prompt: generateMessages() as any,
-    options: {
-      cwd: process.cwd(),
+  // Session options for V2 API
+  const sessionOptions = {
+    cwd: process.cwd(),
 
-      // Load ABAP templates from project
-      settingSources: ['project'],
+    // Load ABAP templates from project
+    settingSources: ['project'] as const,
 
-      // Register all specialized agents
-      agents: {
-        'sap-context': sapContextAgent,
-        'abap-generator': abapCodeGenerator,
-        'test-generator': testGenerator,
-        'deployment-guide': deploymentGuide,
-      },
+    // Register all specialized agents
+    agents: {
+      'sap-context': sapContextAgent,
+      'abap-generator': abapCodeGenerator,
+      'test-generator': testGenerator,
+      'deployment-guide': deploymentGuide,
+    },
 
-      // Allow all necessary tools
-      allowedTools,
+    // Allow all necessary tools
+    allowedTools,
 
-      // Register SAP-specific MCP tools
-      mcpServers: {
-        [SAP_MCP_SERVER_NAME]: sapMcpServer,
-      },
+    // Register SAP-specific MCP tools
+    mcpServers: {
+      [SAP_MCP_SERVER_NAME]: sapMcpServer,
+    },
 
-      // Use Claude Code system prompt for best file handling
-      systemPrompt: {
-        type: 'preset',
-        preset: 'claude_code',
-        append: `
+    // Use Claude Code system prompt for best file handling
+    systemPrompt: {
+      type: 'preset' as const,
+      preset: 'claude_code' as const,
+      append: `
 You are an expert SAP ABAP developer with deep knowledge of OData services.
 
 CRITICAL RULES:
@@ -131,64 +115,82 @@ WORKFLOW:
 5. Write detailed deployment documentation
 
 All code must be production-ready and follow SAP best practices.
-        `,
-      },
-
-      // Auto-accept file edits to output directory
-      permissionMode: 'acceptEdits',
-
-      // Use the best model
-      model: 'claude-sonnet-4-5',
-
-      // Allow enough turns for complex generation
-      maxTurns: 50,
-
-      // Enable thinking for better code generation
-      maxThinkingTokens: 10000,
-
-      // Session management
-      ...(request.resume && {
-        resume: request.resume,
-        forkSession: request.forkSession ?? false,
-      }),
+      `,
     },
-  });
+
+    // Auto-accept file edits to output directory
+    permissionMode: 'acceptEdits' as const,
+
+    // Use the best model
+    model: 'claude-sonnet-4-5' as const,
+
+    // Allow enough turns for complex generation
+    maxTurns: 50,
+
+    // Enable thinking for better code generation
+    maxThinkingTokens: 10000,
+  };
+
+  // Create or resume session using V2 API
+  // Note: V2 uses 'await using' for automatic cleanup, but we need manual handling
+  // for session persistence across the function
+  let session: Awaited<ReturnType<typeof unstable_v2_createSession>>;
+
+  if (request.resume) {
+    // Resume existing session
+    session = await unstable_v2_resumeSession(request.resume, sessionOptions);
+    console.log(`\n📋 Resuming Session: ${request.resume}`);
+  } else {
+    // Create new session
+    session = await unstable_v2_createSession(sessionOptions);
+  }
 
   // Stream results and collect messages
   const messages: any[] = [];
   let finalResult: any = null;
   let sessionId: string | undefined;
 
-  for await (const message of result) {
-    messages.push(message);
+  try {
+    // Send the prompt to the session
+    await session.send(prompt);
 
-    // Capture session ID from init message
-    if (message.type === 'system' && message.subtype === 'init') {
-      sessionId = message.session_id;
-      console.log(`\n📋 Session ID: ${sessionId}`);
-      console.log('   (Save this ID to resume the session later)\n');
-    }
+    // Receive and process messages
+    for await (const message of session.receive()) {
+      messages.push(message);
 
-    if (message.type === 'assistant') {
-      // Log assistant messages
-      console.log(
-        '\n[Assistant]:',
-        message.message.content
-          .map((c: any) => (c.type === 'text' ? c.text : `[${c.type}]`))
-          .join(' ')
-      );
-    } else if (message.type === 'result') {
-      finalResult = message;
-      console.log('\n' + '='.repeat(70));
-      console.log('GENERATION COMPLETE');
-      console.log('='.repeat(70));
-      console.log(`Status: ${message.subtype || 'completed'}`);
-      console.log(`Cost: $${message.total_cost_usd.toFixed(4)}`);
-      console.log(`Duration: ${(message.duration_ms / 1000).toFixed(2)}s`);
-      if (sessionId) {
-        console.log(`Session ID: ${sessionId}`);
+      // Capture session ID from init message
+      if (message.type === 'system' && message.subtype === 'init') {
+        sessionId = message.session_id;
+        console.log(`\n📋 Session ID: ${sessionId}`);
+        console.log('   (Save this ID to resume the session later)\n');
       }
-      console.log('='.repeat(70));
+
+      if (message.type === 'assistant') {
+        // Log assistant messages
+        console.log(
+          '\n[Assistant]:',
+          message.message.content
+            .map((c: any) => (c.type === 'text' ? c.text : `[${c.type}]`))
+            .join(' ')
+        );
+      } else if (message.type === 'result') {
+        finalResult = message;
+        console.log('\n' + '='.repeat(70));
+        console.log('GENERATION COMPLETE');
+        console.log('='.repeat(70));
+        console.log(`Status: ${message.subtype || 'completed'}`);
+        console.log(`Cost: $${message.total_cost_usd.toFixed(4)}`);
+        console.log(`Duration: ${(message.duration_ms / 1000).toFixed(2)}s`);
+        if (sessionId) {
+          console.log(`Session ID: ${sessionId}`);
+        }
+        console.log('='.repeat(70));
+      }
+    }
+  } finally {
+    // Cleanup session (V2 sessions support Symbol.asyncDispose)
+    if (session && typeof (session as any)[Symbol.asyncDispose] === 'function') {
+      await (session as any)[Symbol.asyncDispose]();
     }
   }
 

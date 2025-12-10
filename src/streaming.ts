@@ -1,9 +1,13 @@
 /**
  * Streaming utilities for real-time progress updates
  * Enables Server-Sent Events (SSE) for live agent feedback
+ * Uses Claude Agent SDK V2 Session API
  */
 
-import { query } from '@anthropic-ai/claude-agent-sdk';
+import {
+  unstable_v2_createSession,
+  unstable_v2_resumeSession,
+} from '@anthropic-ai/claude-agent-sdk';
 import { GenerateEndpointRequest } from './types';
 import { sapContextAgent } from './agents/context-analyzer';
 import { abapCodeGenerator } from './agents/code-generator';
@@ -77,6 +81,7 @@ Follow SAP best practices and make all code production-ready.
 
 /**
  * Generate quote endpoint with streaming progress updates
+ * Uses V2 Session API for multi-turn conversations
  */
 export async function* generateQuoteEndpointStreaming(
   request: GenerateEndpointRequest
@@ -115,60 +120,34 @@ export async function* generateQuoteEndpointStreaming(
   // Build the main prompt
   const prompt = buildMainPrompt(request, outputDir, safeCustomerName);
 
-  // Create streaming input generator
-  // Note: SDK expects full SDKUserMessage objects in streaming mode
-  async function* generateMessages() {
-    yield {
-      type: 'user' as const,
-      session_id: request.resume ?? '',
-      message: {
-        role: 'user' as const,
-        content: [
-          {
-            type: 'text' as const,
-            text: prompt,
-          },
-        ],
-      },
-      parent_tool_use_id: null,
-    };
-  }
+  // Session options for V2 API
+  const sessionOptions = {
+    cwd: process.cwd(),
 
-  let sessionId: string | undefined;
-  let currentAgent: string | undefined;
+    // Load ABAP templates from project
+    settingSources: ['project'] as const,
 
-  try {
-    // Start query with streaming input
-    // Type assertion: SDK docs show this simplified format works at runtime
-    const result = query({
-      prompt: generateMessages() as any,
-      options: {
-        cwd: process.cwd(),
+    // Register all specialized agents
+    agents: {
+      'sap-context': sapContextAgent,
+      'abap-generator': abapCodeGenerator,
+      'test-generator': testGenerator,
+      'deployment-guide': deploymentGuide,
+    },
 
-        // Load ABAP templates from project
-        settingSources: ['project'],
+    // Allow all necessary tools
+    allowedTools,
 
-        // Register all specialized agents
-        agents: {
-          'sap-context': sapContextAgent,
-          'abap-generator': abapCodeGenerator,
-          'test-generator': testGenerator,
-          'deployment-guide': deploymentGuide,
-        },
+    // Register SAP-specific MCP tools
+    mcpServers: {
+      [SAP_MCP_SERVER_NAME]: sapMcpServer,
+    },
 
-        // Allow all necessary tools
-        allowedTools,
-
-        // Register SAP-specific MCP tools
-        mcpServers: {
-          [SAP_MCP_SERVER_NAME]: sapMcpServer,
-        },
-
-        // Use Claude Code system prompt for best file handling
-        systemPrompt: {
-          type: 'preset',
-          preset: 'claude_code',
-          append: `
+    // Use Claude Code system prompt for best file handling
+    systemPrompt: {
+      type: 'preset' as const,
+      preset: 'claude_code' as const,
+      append: `
 You are an expert SAP ABAP developer with deep knowledge of OData services.
 
 CRITICAL RULES:
@@ -189,31 +168,39 @@ WORKFLOW:
 5. Write detailed deployment documentation
 
 All code must be production-ready and follow SAP best practices.
-          `,
-        },
+        `,
+    },
 
-        // Auto-accept file edits to output directory
-        permissionMode: 'acceptEdits',
+    // Auto-accept file edits to output directory
+    permissionMode: 'acceptEdits' as const,
 
-        // Use the best model
-        model: 'claude-sonnet-4-5',
+    // Use the best model
+    model: 'claude-sonnet-4-5' as const,
 
-        // Allow enough turns for complex generation
-        maxTurns: 50,
+    // Allow enough turns for complex generation
+    maxTurns: 50,
 
-        // Enable thinking for better code generation
-        maxThinkingTokens: 10000,
+    // Enable thinking for better code generation
+    maxThinkingTokens: 10000,
+  };
 
-        // Session management
-        ...(request.resume && {
-          resume: request.resume,
-          forkSession: request.forkSession ?? false,
-        }),
-      },
-    });
+  let sessionId: string | undefined;
+  let currentAgent: string | undefined;
+  let session: Awaited<ReturnType<typeof unstable_v2_createSession>> | null = null;
 
-    // Stream results and emit progress updates
-    for await (const message of result) {
+  try {
+    // Create or resume session using V2 API
+    if (request.resume) {
+      session = await unstable_v2_resumeSession(request.resume, sessionOptions);
+    } else {
+      session = await unstable_v2_createSession(sessionOptions);
+    }
+
+    // Send the prompt to the session
+    await session.send(prompt);
+
+    // Receive and process messages with progress updates
+    for await (const message of session.receive()) {
       // Capture session ID
       if (message.type === 'system' && message.subtype === 'init') {
         sessionId = message.session_id;
@@ -362,5 +349,10 @@ All code must be production-ready and follow SAP best practices.
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
     };
+  } finally {
+    // Cleanup session (V2 sessions support Symbol.asyncDispose)
+    if (session && typeof (session as any)[Symbol.asyncDispose] === 'function') {
+      await (session as any)[Symbol.asyncDispose]();
+    }
   }
 }
